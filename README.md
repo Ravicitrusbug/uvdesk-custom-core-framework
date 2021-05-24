@@ -3,9 +3,9 @@
 </a></p>
 
 <p align="center">
-    <a href="https://packagist.org/packages/uvdesk/core-framework"><img src="https://poser.pugx.org/uvdesk/core-framework/v/stable.svg" alt="Latest Stable Version"></a>
-    <a href="https://packagist.org/packages/uvdesk/core-framework"><img src="https://poser.pugx.org/uvdesk/core-framework/d/total.svg" alt="Total Downloads"></a>
-    <a href="https://packagist.org/packages/uvdesk/core-framework"><img src="https://poser.pugx.org/uvdesk/core-framework/license.svg" alt="License"></a>
+    <a href="https://packagist.org/packages/myhelpdesk/custom-core-framework"><img src="https://poser.pugx.org/uvdesk/core-framework/v/stable.svg" alt="Latest Stable Version"></a>
+    <a href="https://packagist.org/packages/myhelpdesk/custom-core-framework"><img src="https://poser.pugx.org/uvdesk/core-framework/d/total.svg" alt="Total Downloads"></a>
+    <a href="https://packagist.org/packages/myhelpdesk/custom-core-framework"><img src="https://poser.pugx.org/uvdesk/core-framework/license.svg" alt="License"></a>
     <a href="https://gitter.im/uvdesk/core-framework"><img src="https://badges.gitter.im/uvdesk/core-framework.svg" alt="connect on gitter"></a>
 </p>
 
@@ -32,7 +32,7 @@ This bundle can be easily integrated into any Symfony application (though it is 
 To require the core framework bundle into your symfony project, simply run the following from your project root:
 
 ```bash
-$ composer require uvdesk/core-framework
+$ composer require myhelpdesk/custom-core-framework
 ```
 
 License
