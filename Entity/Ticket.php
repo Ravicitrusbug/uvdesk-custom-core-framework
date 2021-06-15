@@ -195,6 +195,16 @@ class Ticket
     private $supportLabels;
 
     /**
+     * @var \Doctrine\Common\Collections\Collection
+     * @ORM\ManyToMany(targetEntity="SupportTeam")
+     * @ORM\JoinTable(name="uv_tickets_organizations",
+     *      joinColumns={@ORM\JoinColumn(name="ticket_id", referencedColumnName="id", onDelete="CASCADE")},
+     *      inverseJoinColumns={@ORM\JoinColumn(name="organization_id", referencedColumnName="id", onDelete="CASCADE")}
+     * )
+     */
+    private $supportOrganizations;
+
+    /**
      * Constructor
      */
     public function __construct()
@@ -203,6 +213,7 @@ class Ticket
         $this->ratings = new \Doctrine\Common\Collections\ArrayCollection();
         $this->supportTags = new \Doctrine\Common\Collections\ArrayCollection();
         $this->supportLabels = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->supportOrganizations = new \Doctrine\Common\Collections\ArrayCollection();
     }
 
     /**
@@ -872,5 +883,38 @@ class Ticket
     {
         return $this->formatedCreatedAt;
     }
-}
 
+    /**
+     * Add supportOrganization
+     *
+     * @param \Webkul\UVDesk\CoreFrameworkBundle\Entity\SupportTeam $supportOrganization
+     *
+     * @return Ticket
+     */
+    public function addSupportOrganization(\Webkul\UVDesk\CoreFrameworkBundle\Entity\SupportTeam $supportOrganization)
+    {
+        $this->supportOrganizations[] = $supportOrganization;
+
+        return $this;
+    }
+
+    /**
+     * Remove supportOrganization
+     *
+     * @param \Webkul\UVDesk\CoreFrameworkBundle\Entity\SupportTeam $supportOrganization
+     */
+    public function removeSupportOrganization(\Webkul\UVDesk\CoreFrameworkBundle\Entity\SupportTeam $supportOrganization)
+    {
+        $this->supportOrganizations->removeElement($supportOrganization);
+    }
+
+    /**
+     * Get supportOrganizations
+     *
+     * @return \Doctrine\Common\Collections\Collection
+     */
+    public function getSupportOrganizations()
+    {
+        return $this->supportOrganizations;
+    }
+}

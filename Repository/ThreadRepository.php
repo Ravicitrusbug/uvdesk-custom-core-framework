@@ -20,15 +20,15 @@ class ThreadRepository extends \Doctrine\ORM\EntityRepository
 
     public function findTicketBySubject($email, $subject)
     {
-        if (stripos($subject,"RE: ") !== false) {
+        if (stripos($subject, "RE: ") !== false) {
             $subject = str_ireplace("RE: ", "", $subject);
         }
 
-        if (stripos($subject,"FWD: ") !== false) {
-            $subject = str_ireplace("FWD: ","",$subject);
+        if (stripos($subject, "FWD: ") !== false) {
+            $subject = str_ireplace("FWD: ", "", $subject);
         }
 
-        $ticket = $this->getEntityManager()->createQuery("SELECT t FROM UVDeskCoreFrameworkBundle:Ticket t WHERE t.subject LIKE :referenceIds" )
+        $ticket = $this->getEntityManager()->createQuery("SELECT t FROM UVDeskCoreFrameworkBundle:Ticket t WHERE t.subject LIKE :referenceIds")
             ->setParameter('referenceIds', '%' . $subject . '%')
             ->setMaxResults(1)
             ->getOneOrNullResult();
@@ -48,8 +48,18 @@ class ThreadRepository extends \Doctrine\ORM\EntityRepository
             ->getOneOrNullResult();
     }
 
-    public function prepareBasePaginationRecentThreadsQuery($ticket, array $params, $enabledLockedThreads = true)
+    public function prepareBasePaginationRecentThreadsQuery($ticket, array $params, $enabledLockedThreads = true, $activeUser)
     {
+        // check that whether the ticket is forwared or not and if yes then select the forwared date to showing messages from that forwared date only
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select("thread")
+            ->from('UVDeskCoreFrameworkBundle:Thread', 'thread')
+            ->where('thread.replyTo LIKE :user')->setParameter('user', '%' . urldecode($activeUser->getEmail()) . '%')
+            ->andwhere('thread.ticket = :ticket')->setParameter('ticket', $ticket)
+            ->andWhere('thread.threadType = :threadType')->setParameter('threadType', 'forward')
+            ->orderBy('thread.createdAt', Criteria::ASC)
+            ->getQuery()->getArrayResult();
+
         $queryBuilder = $this->getEntityManager()->createQueryBuilder()
             ->select("thread, attachments, user, userInstance")
             ->from('UVDeskCoreFrameworkBundle:Thread', 'thread')
@@ -63,6 +73,11 @@ class ThreadRepository extends \Doctrine\ORM\EntityRepository
         // Filter locked threads
         if (false === $enabledLockedThreads) {
             $queryBuilder->andWhere('thread.isLocked = :isThreadLocked')->setParameter('isThreadLocked', false);
+        }
+
+        // filter forwarded date
+        if (count($qb) > 0) {
+            $queryBuilder->andWhere('thread.createdAt > :forwardedTime')->setParameter('forwardedTime', $qb[0]['createdAt']);
         }
 
         // Filter threads by their type
@@ -90,7 +105,7 @@ class ThreadRepository extends \Doctrine\ORM\EntityRepository
         return $queryBuilder;
     }
 
-    public function getAllCustomerThreads($ticketId,\Symfony\Component\HttpFoundation\ParameterBag $obj = null, $container)
+    public function getAllCustomerThreads($ticketId, \Symfony\Component\HttpFoundation\ParameterBag $obj = null, $container)
     {
         $json = array();
         $entityManager = $this->getEntityManager();
@@ -121,7 +136,7 @@ class ThreadRepository extends \Doctrine\ORM\EntityRepository
         $queryParameters = $results->getParams();
 
         $queryParameters['page'] = "replacePage";
-        $paginationData['url'] = '#'.$container->get('uvdesk.service')->buildPaginationQuery($queryParameters);
+        $paginationData['url'] = '#' . $container->get('uvdesk.service')->buildPaginationQuery($queryParameters);
 
         $data = array();
         $userService = $container->get('user.service');
@@ -133,7 +148,7 @@ class ThreadRepository extends \Doctrine\ORM\EntityRepository
                 'id' => $thread['id'],
                 'user' => $row['userId'] ? ['id' => $row['userId']] : null,
                 'fullname' => $row['fullname'],
-                'smallThumbnail'=> $row['smallThumbnail'],
+                'smallThumbnail' => $row['smallThumbnail'],
                 'reply' => html_entity_decode($thread['message']),
                 'source' => $thread['source'],
                 'threadType' => $thread['threadType'],
@@ -154,7 +169,7 @@ class ThreadRepository extends \Doctrine\ORM\EntityRepository
 
             array_push($data, $threadResponse);
         }
-        
+
         $json['threads'] = $data;
         $json['pagination'] = $paginationData;
 

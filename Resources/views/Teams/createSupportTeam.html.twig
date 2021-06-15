@@ -44,7 +44,7 @@
                                 <label>{{ 'Filter With'|trans }}</label>
                             </div>
                             <ul class="uv-agents-list">
-                                {% for agent in user_service.getAgentsPartialDetails() %}
+                                {% for agent in user_service.getAgentsYetNotAssigend() %}
                                     <li data-id="{{agent.id}}">
                                         {% if agent.smallThumbnail != null %}
                                             <img src="{{ agent.smallThumbnail }}"/>

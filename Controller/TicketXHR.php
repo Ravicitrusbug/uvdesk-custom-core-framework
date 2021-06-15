@@ -414,13 +414,13 @@ class TicketXHR extends Controller
                         $responseCode = 200;
                         $response = [
                             'alertClass' => 'success',
-                            'alertMessage' => $this->translator->trans('Ticket support team updated successfully'),
+                            'alertMessage' => $this->translator->trans('Ticket support organization updated successfully'),
                         ];
                     } else {
                         $responseCode = 404;
                         $response = [
                             'alertClass' => 'danger',
-                            'alertMessage' => $this->translator->trans('Unable to retrieve support team details'),
+                            'alertMessage' => $this->translator->trans('Unable to retrieve support organization details'),
                         ];
                     }
 
@@ -430,7 +430,7 @@ class TicketXHR extends Controller
                 if ($ticket->getSupportTeam() != null && $supportTeam->getId() === $ticket->getSupportTeam()->getId()) {
                     return new Response(json_encode([
                         'alertClass' => 'success',
-                        'alertMessage' => 'Ticket already assigned to support team ' . $supportTeam->getName(),
+                        'alertMessage' => 'Ticket already assigned to support organization ' . $supportTeam->getName(),
                     ]), 200, ['Content-Type' => 'application/json']);
                 } else {
                     $ticket->setSupportTeam($supportTeam);
@@ -446,7 +446,7 @@ class TicketXHR extends Controller
 
                     return new Response(json_encode([
                         'alertClass' => 'success',
-                        'alertMessage' => 'Ticket assigned to support team ' . $supportTeam->getName(),
+                        'alertMessage' => 'Ticket assigned to support organization ' . $supportTeam->getName(),
                     ]), 200, ['Content-Type' => 'application/json']);
                 }
                 break;
@@ -983,6 +983,70 @@ class TicketXHR extends Controller
 
             $json['alertClass'] = 'success';
             $json['alertMessage'] = $this->translator->trans('Success ! Tag removed successfully.');
+        }
+
+        $response = new Response(json_encode($json));
+        $response->headers->set('Content-Type', 'application/json');
+        return $response;
+    }
+
+    public function updateTicketOrganization(Request $request)
+    {
+        $organizations = $request->request->get('organizationId');
+        $em = $this->getDoctrine()->getManager();
+        $ticketId = $request->request->get('ticketId');
+        $ticket = $em->getRepository('UVDeskCoreFrameworkBundle:Ticket')->find($ticketId);
+
+        if (!empty($organizations)) {
+            foreach ($organizations as $organzation) {
+                $supportOrganizations = $em->getRepository('UVDeskCoreFrameworkBundle:SupportTeam')->find($organzation);
+                $ticket->addSupportOrganization($supportOrganizations);
+            }
+            $em->persist($ticket);
+            $em->flush();
+            $json['alertClass'] = 'success';
+            $json['alertMessage'] = $this->translator->trans('Success ! Organizations added successfully.');
+        }
+
+        $response = new Response(json_encode($json));
+        $response->headers->set('Content-Type', 'application/json');
+        return $response;
+    }
+
+    public function deleteOrganizationTicket(Request $request)
+    {
+        $organizationId = $request->request->get('organizationId');
+        $em = $this->getDoctrine()->getManager();
+        $ticketId = $request->request->get('ticketId');
+        $ticket = $em->getRepository('UVDeskCoreFrameworkBundle:Ticket')->find($ticketId);
+
+        if (!empty($organizationId)) {
+            $organization = $em->getRepository('UVDeskCoreFrameworkBundle:SupportTeam')->findOneBy(array('id' => $organizationId));
+            $ticket->removeSupportOrganization($organization);
+            $em->persist($ticket);
+            $em->flush();
+            $json['alertClass'] = 'success';
+            $json['alertMessage'] = $this->translator->trans('Success ! Organization deleted successfully.');
+        }
+
+        $response = new Response(json_encode($json));
+        $response->headers->set('Content-Type', 'application/json');
+        return $response;
+    }
+
+    public function deleteSingleTicket(Request $request)
+    {
+        $organizationId = $request->request->get('organizationId');
+        $em = $this->getDoctrine()->getManager();
+        $ticketId = $request->request->get('ticketId');
+        $ticket = $em->getRepository('UVDeskCoreFrameworkBundle:Ticket')->find($ticketId);
+
+        if (!empty($organizationId)) {
+            $ticket->setSupportTeam(null);
+            $em->persist($ticket);
+            $em->flush();
+            $json['alertClass'] = 'success';
+            $json['alertMessage'] = $this->translator->trans('Success ! Organization deleted successfully.');
         }
 
         $response = new Response(json_encode($json));

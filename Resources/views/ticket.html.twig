@@ -475,7 +475,8 @@
 
                     {# Update Ticket Status #}
                     <div class="uv-aside-select">
-                        <label class="uv-aside-select-label">{{ 'Status'|trans }}</label>
+                        <label class="uv-aside-select-label">{{ 'Status'|trans }}</label>&nbsp 
+                        <a href="#ex1" rel="modal:open" title="Click to show the history" class="show_status_history"><i class="fas fa-clock"></i></a>
                         <div>
                             {% if user_service.isAccessAuthorized('ROLE_AGENT_UPDATE_TICKET_STATUS') %}
                                 <span class="uv-aside-select-value uv-dropdown-other uv-aside-drop-icon" data-id="{{ ticket.status.id }}">{{ ticket.status.description|trans }}</span>
@@ -555,7 +556,7 @@
                     </div>
 
                     {# Update Ticket Support Team #}
-                    <div class="uv-aside-select">
+                    <!--<div class="uv-aside-select">
                         <label class="uv-aside-select-label">{{ 'Team'|trans }}</label>
                         <div>
                             {% if user_service.isAccessAuthorized('ROLE_AGENT_ASSIGN_TICKET_GROUP') %}
@@ -582,7 +583,42 @@
                                 </span>
                             {% endif %}
                         </div>
-                    </div>
+                    </div>-->
+					
+					{% if user_service.isAccessAuthorized('ROLE_AGENT_ASSIGN_TICKET_GROUP') %}
+                        <div class="uv-element-block uv-aside-select">
+                            <label class="uv-aside-select-label">Organizations</label>
+
+                            <select id="select-additional-organizations" class="chosen-select" name="states[]" multiple data-placeholder="Choose a organization...">
+                                    {% for team in supportTeamCollection %}
+                                    <option value="{{ team.id }}">{{ team.name }}</option>
+                                    {% endfor %}
+                                </select>
+                        </div>
+						<div class="addition-organizations-list" style="margin-top: 10px">
+						{% if ticket_service.getTicketOrganizations(ticket.id)[0]['name'] != null %}
+								{% for organization in ticket_service.getTicketOrganizations(ticket.id) %}
+								<a class="uv-btn-tag delete-additional-organizations" data-organization_id={{ organization.id }}>
+                                    <span class="uv-tag">
+                                        <span class="uv-icon-remove-dark-before"></span>
+                                        {{ organization.name }}
+                                    </span>
+								</a>
+								{% endfor %}
+						{% endif %}
+						{% if ticket_service.getTicketSingleOrganization(ticket.id)[0]['name'] != null %}
+								{% for ogz in ticket_service.getTicketSingleOrganization(ticket.id) %}
+								<a class="uv-btn-tag delete-single-organization" data-organization_id={{ ogz.id }}>
+                                    <span class="uv-tag">
+                                        <span class="uv-icon-remove-dark-before"></span>
+                                        {{ ogz.name }}
+                                    </span>
+								</a>
+								{% endfor %}
+						{% endif %}
+						</div>
+					 {% endif %}
+
                 </div>
             </div>
 
@@ -916,7 +952,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="uv-dropdown reply">
+                                    <div class="uv-dropdown reply as">
                                         <div class="uv-btn uv-dropdown-other">{{ 'Reply'|trans }} <span class="uv-icon-down-light"></span></div>
                                         <div class="uv-dropdown-list uv-top-left">
                                             <div class="uv-dropdown-container">
@@ -925,8 +961,8 @@
                                                     <li data-id="">{{ 'Submit'|trans }}</li>
                                                     {% if user_service.isAccessAuthorized('ROLE_AGENT_UPDATE_TICKET_STATUS') %}
                                                         <li data-id="open">{{ 'Submit And Open'|trans }}</li>
-                                                        <li data-id="pending">{{ 'Submit And Pending'|trans }}</li>
-                                                        <li data-id="answered">{{ 'Submit And Answered'|trans }}</li>
+                                                        <li data-id="inprogress">{{ 'Submit And In Progress'|trans }}</li>
+                                                        <li data-id="waitingoncustomer">{{ 'Submit And Waiting On Customer'|trans }}</li>
                                                         <li data-id="resolved">{{ 'Submit And Resolved'|trans }}</li>
                                                         <li data-id="closed">{{ 'Submit And Closed'|trans }}</li>
                                                     {% endif %}
@@ -1074,7 +1110,7 @@
                                             </div>
                                         </div>
 
-                                        <div class="uv-dropdown reply">
+                                        <div class="uv-dropdown reply df">
                                             <div class="uv-btn uv-dropdown-other">{{ 'Reply'|trans}}<span class="uv-icon-down-light"></span></div>
 
                                             <div class="uv-dropdown-list uv-top-left">
@@ -1084,8 +1120,8 @@
                                                         <li data-id="">{{ 'Submit'|trans }}</li>
                                                         {% if user_service.isAccessAuthorized('ROLE_AGENT_UPDATE_TICKET_STATUS') %}
                                                             <li data-id="open">{{ 'Submit And Open'|trans }}</li>
-                                                            <li data-id="pending">{{ 'Submit And Pending'|trans }}</li>
-                                                            <li data-id="answered">{{ 'Submit And Answered'|trans }}</li>
+                                                            <li data-id="inprogress">{{ 'Submit And In Progress'|trans }}</li>
+                                                            <li data-id="waitingoncustomer">{{ 'Submit And Waiting On Customer'|trans }}</li>
                                                             <li data-id="resolved">{{ 'Submit And Resolved'|trans }}</li>
                                                             <li data-id="closed">{{ 'Submit And Closed'|trans }}</li>
                                                         {% endif %}
@@ -1191,6 +1227,29 @@
     {% endif %}
 
     {{ uvdesk_extensibles.getRegisteredComponent("Webkul\\UVDesk\\CoreFrameworkBundle\\Tickets\\WidgetCollection").embedSideFilterContent()|raw }}
+
+    <div id="ex1" class="modal">
+		<h2>Status Change History</h2><br>
+        <div class="uv-table">
+            <table>
+                <thead>
+                </thead>
+                <tbody>
+                    {% if ticket_service.getTicketStatusLogs(ticket.id) %}
+								{% for log in ticket_service.getTicketStatusLogs(ticket.id) %}
+								<tr>
+									<td><b>{{ log.firstName }}</b> Changed status from <b>{{ log.oldStatus }}</b> To <b>{{ log.newStatus }}</b> at {{ log.changedAt|date('m-d-Y H:i:s') }}</td>
+								</tr>
+								{% endfor %}
+					{% else %}
+                                <tr>
+									<td>History not found</td>
+								</tr>
+					{% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 {% endblock %}
 
 {% block footer %}
@@ -2911,4 +2970,55 @@
             };
         }
     </script>
+	
+    // Ticket Additional organization
+	<script>
+        $('#select-additional-organizations').chosen({
+            no_results_text: "Oops, nothing found!",
+            width: "95%"
+        });
+		$('#select-additional-organizations').change(function(){
+            app.appView.showLoader();
+			$.ajax({
+				url : "{{ path('helpdesk_member_update_ticket_additional_organization_xhr') }}",
+				type : 'POST',
+				data: { ticketId : {{ ticket.id }}, organizationId :  $(this).val() },
+				dataType : 'json',
+				success : function(response) {
+                    app.appView.hideLoader();
+                    app.appView.renderResponseAlert(response);
+                    window.location.reload();
+				}
+			});
+		});
+
+        $('.delete-additional-organizations').click(function(){
+           var organizationId =  $(this).data('organization_id');
+            $.ajax({
+				url : "{{ path('helpdesk_member_delete_additional_ticket_organization_xhr') }}",
+				type : 'POST',
+				data: { ticketId : {{ ticket.id }}, organizationId : organizationId },
+				dataType : 'json',
+				success : function(response) {
+                    app.appView.hideLoader();
+                    app.appView.renderResponseAlert(response);
+				}
+			});
+            $(this).remove();
+		});
+
+        $('.delete-single-organization').click(function(){
+           var organizationId =  $(this).data('organization_id');
+            $.ajax({
+				url : "{{ path('helpdesk_member_delete_single_ticket_organization_xhr') }}",
+				type : 'POST',
+				data: { ticketId : {{ ticket.id }}, organizationId : organizationId },
+				dataType : 'json',
+				success : function(response) {
+                    app.appView.hideLoader();
+                    app.appView.renderResponseAlert(response);
+				}
+			});
+		});
+	</script>
 {% endblock %}

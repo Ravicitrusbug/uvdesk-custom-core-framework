@@ -199,6 +199,10 @@
                             {# Assets Visibilities #}
                             <div class="uv-dropdown asset-visibility">
                                 <div class="uv-dropdown-btn uv-vertical-align uv-margin-right-5">{{ 'Assets Visibility'|trans }}</div>
+                                <a href="/uvdesk/public/en/member/ticket/export?agent=5" type="button" class="uv-btn-action">
+                                    <span class="uv-icon-add"></span>
+                                    Export
+                                </a>
 
                                 <div class="uv-dropdown-list uv-bottom-left" style="width: 215px;">
                                     <div class="uv-dropdown-container">
@@ -516,6 +520,7 @@
                         <th data-index="type1">{{ 'Type'|trans }}</th>
                         <th data-index="replies">{{ 'Replies'|trans }}</th>
                         <th data-index="agent">{{ 'Agent'|trans }}</th>
+                        <th data-index="status">{{ 'Status'|trans }}</th>
                     </tr>
                     </thead>
 
@@ -1431,6 +1436,7 @@
                 <% } %>
             </a>
         </td>
+        <td data-value="{{ 'Status'|trans }}" data-index="status"><%= status %></td>
     </script>
 
     <script type="text/javascript">
@@ -2054,6 +2060,7 @@
                 },
                 applyFilter: function(e) {
                     currentElement = Backbone.$(e.currentTarget);
+					
                     if(currentElement.attr("data-id")) {
                         var flag = 1;
                         parent = currentElement.parents(".uv-field-block");
@@ -2076,6 +2083,7 @@
                         if(jQuery.inArray(filterType, ['agent', 'priority', 'type', 'group', 'team', 'mailbox', 'source']) !== -1) {
                             parent.find("li:not(.uv-no-results)").show()
                         }
+						
                         if(flag) {
                             parent.find('.uv-filtered-tags').append("<a class='uv-btn-tag' href='#' data-id='" + currentElement.attr('data-id') + "'>"+currentElement.text()+"<span class='uv-icon-remove-dark'></span></a>")
                             ticketCollection.state.order = null;
@@ -2083,6 +2091,7 @@
                             ticketCollection.state.currentPage = null;
                             ticketCollection.filterParameters[filterType] = this.joinTagValues(parent.find(".uv-filtered-tags"));
                             var queryString = app.appView.buildQuery($.param(ticketCollection.getValidParameters()));
+							console.log($.param(ticketCollection.getValidParameters()));
                             router.navigate(queryString, {trigger: true});
                         }
                     } else {
