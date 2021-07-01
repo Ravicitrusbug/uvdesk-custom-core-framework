@@ -140,6 +140,13 @@ class Ticket
     private $priority;
 
     /**
+     * @var \Webkul\UVDesk\CoreFrameworkBundle\Entity\SupportCompany
+     * @ORM\ManyToOne(targetEntity="SupportCompany")
+     * @ORM\JoinColumn(name="company_id", referencedColumnName="id")
+     */
+    private $company;
+
+    /**
      * @var \Webkul\UVDesk\CoreFrameworkBundle\Entity\TicketType
      * @ORM\ManyToOne(targetEntity="TicketType")
      * @ORM\JoinColumn(name="type_id", referencedColumnName="id", nullable=true, onDelete="SET NULL")
@@ -916,5 +923,29 @@ class Ticket
     public function getSupportOrganizations()
     {
         return $this->supportOrganizations;
+    }
+
+    /**
+     * Set company
+     *
+     * @param \Webkul\UVDesk\CoreFrameworkBundle\Entity\SupportCompany $company
+     *
+     * @return Ticket
+     */
+    public function setCompany(\Webkul\UVDesk\CoreFrameworkBundle\Entity\SupportCompany $company = null)
+    {
+        $this->company = $company;
+
+        return $this;
+    }
+
+    /**
+     * Get company
+     *
+     * @return \Webkul\UVDesk\CoreFrameworkBundle\Entity\SupportCompany
+     */
+    public function getCompany()
+    {
+        return $this->company;
     }
 }

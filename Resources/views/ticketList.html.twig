@@ -133,7 +133,7 @@
                                     </li>
                                 </ul>
                             </li>
-                            <li>
+                            <!--<li>
                                 <a href="#new">{{ 'New'|trans }} <span class="uv-flag-gray uv-flag-dark">0</span></a>
                             </li>
                             <li>
@@ -144,7 +144,7 @@
                             </li>
                             <li>
                                 <a href="#mine">{{ 'My Tickets'|trans }} <span class="uv-flag-gray uv-flag-dark">0</span></a>
-                            </li>
+                            </li>-->
                             <li>
                                 <a href="#starred">{{ 'Starred'|trans }} <span class="uv-flag-gray uv-flag-dark">0</span></a>
                             </li>
@@ -199,10 +199,16 @@
                             {# Assets Visibilities #}
                             <div class="uv-dropdown asset-visibility">
                                 <div class="uv-dropdown-btn uv-vertical-align uv-margin-right-5">{{ 'Assets Visibility'|trans }}</div>
-                                <a href="/uvdesk/public/en/member/ticket/export?agent=5" type="button" class="uv-btn-action">
+                                
+                                {% if user_service.isAccessAuthorized('ROLE_AGENT_CREATE_TICKET') %}
+                                <a  type="button" data-action="create" class="uv-open-popup uv-btn-action" data-target="create-ticket-modal">
                                     <span class="uv-icon-add"></span>
-                                    Export
+                                    {{ 'Create Ticket'|trans }}
                                 </a>
+                                {% endif %}
+
+                                <a style="margin-left:10px" href="#export-column-modal" rel="modal:open" title="Click to show the history" type="button" class="uv-btn-action"><span class="uv-icon-add"></span>
+                                    Export</a>
 
                                 <div class="uv-dropdown-list uv-bottom-left" style="width: 215px;">
                                     <div class="uv-dropdown-container">
@@ -521,6 +527,7 @@
                         <th data-index="replies">{{ 'Replies'|trans }}</th>
                         <th data-index="agent">{{ 'Agent'|trans }}</th>
                         <th data-index="status">{{ 'Status'|trans }}</th>
+                        <th data-index="status">{{ 'Company'|trans }}</th>
                     </tr>
                     </thead>
 
@@ -854,6 +861,122 @@
             </script>
         </div>
     </div>
+    <div id="export-column-modal" class="modal">
+		<h2>Select Columns to be exported</h2><br>
+                <div class="uv-element-block">
+                    <label>
+                        <div class="uv-checkbox">
+                            <input type="checkbox" name="export-column" value="id" checked disabled>
+                            <span class="uv-checkbox-view"></span>
+                        </div>
+                        <span class="uv-checkbox-label">ID</span>
+                    </label>
+                </div>
+                 <div class="uv-element-block">
+                    <label>
+                        <div class="uv-checkbox">
+                            <input type="checkbox" name="export-column" value="subject" checked disabled>
+                            <span class="uv-checkbox-view"></span>
+                        </div>
+                        <span class="uv-checkbox-label">Subject</span>
+                    </label>
+                </div>
+                <div class="uv-element-block">
+                    <label>
+                        <div class="uv-checkbox">
+                            <input type="checkbox" name="export-column" value="customer-name">
+                            <span class="uv-checkbox-view"></span>
+                        </div>
+                        <span class="uv-checkbox-label">Customer Name</span>
+                    </label>
+                </div>
+                <div class="uv-element-block">
+                    <label>
+                        <div class="uv-checkbox">
+                            <input type="checkbox" name="export-column" value="customer-email">
+                            <span class="uv-checkbox-view"></span>
+                        </div>
+                        <span class="uv-checkbox-label">Customer Email</span>
+                    </label>
+                </div>
+                <div class="uv-element-block">
+                    <label>
+                        <div class="uv-checkbox">
+                            <input type="checkbox" name="export-column" value="timestamp">
+                            <span class="uv-checkbox-view"></span>
+                        </div>
+                        <span class="uv-checkbox-label">Timestamp</span>
+                    </label>
+                </div>
+                <div class="uv-element-block">
+                    <label>
+                        <div class="uv-checkbox">
+                            <input type="checkbox" name="export-column" value="last-reply">
+                            <span class="uv-checkbox-view"></span>
+                        </div>
+                        <span class="uv-checkbox-label">Last Reply</span>
+                    </label>
+                </div>
+                <div class="uv-element-block">
+                    <label>
+                        <div class="uv-checkbox">
+                            <input type="checkbox" name="export-column" value="group">
+                            <span class="uv-checkbox-view"></span>
+                        </div>
+                        <span class="uv-checkbox-label">Group</span>
+                    </label>
+                </div>
+                <div class="uv-element-block">
+                    <label>
+                        <div class="uv-checkbox">
+                            <input type="checkbox" name="export-column" value="organization">
+                            <span class="uv-checkbox-view"></span>
+                        </div>
+                        <span class="uv-checkbox-label">Organization</span>
+                    </label>
+                </div>
+                <div class="uv-element-block">
+                    <label>
+                        <div class="uv-checkbox">
+                            <input type="checkbox" name="export-column" value="type">
+                            <span class="uv-checkbox-view"></span>
+                        </div>
+                        <span class="uv-checkbox-label">Type</span>
+                    </label>
+                </div>
+                <div class="uv-element-block">
+                    <label>
+                        <div class="uv-checkbox">
+                            <input type="checkbox" name="export-column" value="agent">
+                            <span class="uv-checkbox-view"></span>
+                        </div>
+                        <span class="uv-checkbox-label">Agent</span>
+                    </label>
+                </div>
+                <div class="uv-element-block">
+                    <label>
+                        <div class="uv-checkbox">
+                            <input type="checkbox" name="export-column" value="status">
+                            <span class="uv-checkbox-view"></span>
+                        </div>
+                        <span class="uv-checkbox-label">Status</span>
+                    </label>
+                </div>
+                <div class="uv-element-block">
+                    <label>
+                        <div class="uv-checkbox">
+                            <input type="checkbox" name="export-column" value="company">
+                            <span class="uv-checkbox-view"></span>
+                        </div>
+                        <span class="uv-checkbox-label">Company</span>
+                    </label>
+                </div>
+                <a type="button" class="uv-btn-action export-report" >
+                    <span class="uv-icon-add"></span>
+                    Export
+                </a>
+                <input type="hidden" name="search-criteria" id="search-criteria" value="">
+        </div>
 {% endblock %}
 
 {% block footer %}
@@ -935,6 +1058,7 @@
             <span class="uv-flag-gray uv-flag-dark"><%= labelDetails.predefind.all %></span>
             </a>
         </li>
+		{# 
         <li>
             <a href="#new" <% if(active == 'new') { %> class="uv-aside-active" <% } %> >
             {{ 'New'|trans }}
@@ -967,6 +1091,7 @@
                 </span>
             </a>
         </li>
+		#}
         <li>
             <a href="#starred" <% if(active == 'starred') { %> class="uv-aside-active" <% } %> >
             {{ 'Starred'|trans }}
@@ -1437,6 +1562,7 @@
             </a>
         </td>
         <td data-value="{{ 'Status'|trans }}" data-index="status"><%= status %></td>
+        <td data-value="{{ 'Company'|trans }}" data-index="company"><%= company %></td>
     </script>
 
     <script type="text/javascript">
@@ -2091,6 +2217,7 @@
                             ticketCollection.state.currentPage = null;
                             ticketCollection.filterParameters[filterType] = this.joinTagValues(parent.find(".uv-filtered-tags"));
                             var queryString = app.appView.buildQuery($.param(ticketCollection.getValidParameters()));
+                            $('#search-criteria').val($.param(ticketCollection.getValidParameters()));
 							console.log($.param(ticketCollection.getValidParameters()));
                             router.navigate(queryString, {trigger: true});
                         }
@@ -3058,9 +3185,30 @@
             var labelListView = new LabelListView()
             var filter = new Filter({collection : ticketCollection});
 
+            setInterval(function(){ 
+                ticketCollection.syncData(); 
+            }, 60000);
+
             Backbone.history.start({
                 push_state:true
             });
         });
+    </script>
+    <script>
+    $(".export-report").click(function(){
+        var favorite = [];
+        $.each($("input[name='export-column']:checked"), function(){
+            favorite.push($(this).val());
+        });
+        var exportLink = '';
+        var filterRecords = $('#search-criteria').val();
+        if(filterRecords){
+            exportLink +=  "/uvdesk/public/en/member/ticket/export?columns="+favorite.join(",")+'&'+filterRecords;
+            window.location.href = exportLink;
+        }else{
+            exportLink += "/uvdesk/public/en/member/ticket/export?columns="+favorite.join(",");
+            window.location.href = exportLink;
+        }
+    })
     </script>
 {% endblock %}

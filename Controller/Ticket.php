@@ -95,6 +95,7 @@ class Ticket extends Controller
             'currentUserDetails' => $user->getAgentInstance()->getPartialDetails(),
             'supportGroupCollection' => $userRepository->getSupportGroups(),
             'supportTeamCollection' => $userRepository->getSupportTeams(),
+            'supportCompanyCollection' => $entityManager->getRepository('UVDeskCoreFrameworkBundle:SupportCompany')->findAll(),
             'ticketStatusCollection' => $entityManager->getRepository('UVDeskCoreFrameworkBundle:TicketStatus')->findAll(),
             'ticketTypeCollection' => $entityManager->getRepository('UVDeskCoreFrameworkBundle:TicketType')->findByIsActive(true),
             'ticketPriorityCollection' => $entityManager->getRepository('UVDeskCoreFrameworkBundle:TicketPriority')->findAll(),
@@ -416,20 +417,18 @@ class Ticket extends Controller
     {
         $params = $request->query->all();
         $spreadsheet = new Spreadsheet();
-
         $sheet = $spreadsheet->getActiveSheet();
-
         $sheet->setTitle('User List');
 
-        $sheet->getCell('A1')->setValue('ID');
-        $sheet->getCell('B1')->setValue('Subject');
-        $sheet->getCell('C1')->setValue('Customer Name');
-        $sheet->getCell('D1')->setValue('Customer Email');
-        $sheet->getCell('E1')->setValue('Type');
-        $sheet->getCell('F1')->setValue('Status');
-        $sheet->getCell('G1')->setValue('Group');
-        $sheet->getCell('H1')->setValue('Organization');
-        $sheet->getCell('I1')->setValue('Agent');
+        if (isset($params['columns'])) {
+            $columns = explode(',', $params['columns']);
+            $i = 1;
+            foreach ($columns as $column) {
+                $alphabet = $this->numberToAlphabet($i);
+                $sheet->getCell($alphabet . '1')->setValue(ucwords(str_replace('-', ' ', $column)));
+                $i++;
+            }
+        }
 
         $entityManager = $this->getDoctrine()->getManager();
         $activeUser = $this->container->get('user.service')->getSessionUser();
@@ -438,27 +437,72 @@ class Ticket extends Controller
         $supportTeamReference  = $entityManager->getRepository('UVDeskCoreFrameworkBundle:User')->getUserSupportTeamReferences($activeUser);
 
         // // Get base query
-        $baseQuery = $ticketRepository->prepareBaseTicketQuery($activeUser, $supportGroupReference, $supportTeamReference, $params);
+        $baseQuery = $ticketRepository->prepareBaseTicketQuery($activeUser, $supportGroupReference, $supportTeamReference, $params, false);
         $tickets = $baseQuery->getQuery()->getArrayResult();
 
         if (!empty($tickets)) {
+            $ticketIndex = 2;
             foreach ($tickets as $ticket) {
-                $list[] = [
-                    $ticket[0]['id'],
-                    $ticket[0]['subject'],
-                    $ticket['customerName'],
-                    $ticket['customerEmail'],
-                    $ticket['typeName'],
-                    $ticket['description'],
-                    $ticket['groupName'],
-                    $ticket['teamName'],
-                    $ticket['agentName'],
-                ];
+                if (isset($params['columns'])) {
+                    $columns = explode(',', $params['columns']);
+                    $columnIndex = 1;
+                    foreach ($columns as $column) {
+                        $alphabet = $this->numberToAlphabet($columnIndex);
+                        //$ticketQueryColumn = $this->getTicketColumnFromSelectedColumn($column);
+
+                        if ($column === 'id') {
+                            $value = $ticket[0]['id'];
+                        } else if ($column === 'subject') {
+                            $value = $ticket[0]['subject'];
+                        } else if ($column === 'customer-name') {
+                            $value = $ticket['customerName'];
+                        } else if ($column === 'group') {
+                            $value = $ticket['groupName'];
+                        } else if ($column === 'organization') {
+                            $value = $ticket['teamName'];
+                        } else if ($column === 'type') {
+                            $value = $ticket['typeName'];
+                        } else if ($column === 'agent') {
+                            $value = $ticket['agentName'];
+                        } else if ($column === 'status') {
+                            $value = $ticket['description'];
+                        } else if ($column === 'company') {
+                            $value = $ticket['companyName'];
+                        } else if ($column === 'customer-email') {
+                            $value = $ticket['customerEmail'];
+                        } else if ($column === 'timestamp') {
+                            $website = $entityManager->getRepository('UVDeskCoreFrameworkBundle:Website')->findOneBy(['code' => 'helpdesk']);
+                            $timeZone = $website->getTimezone();
+                            $timeFormat = $website->getTimeformat();
+                            $agentTimeZone = $activeUser->getTimezone();
+                            $agentTimeFormat = $activeUser->getTimeformat();
+                            $dbTime = $ticket[0]['createdAt'];
+                            $formattedTime = $this->ticketService->fomatTimeByPreference($dbTime, $timeZone, $timeFormat, $agentTimeZone, $agentTimeFormat);
+                            $value = $formattedTime['dateTimeZone'];
+                        } else if ($column === 'last-reply') {
+                            $currentDateTime  = new \DateTime('now');
+                            if ($this->ticketService->getLastReply($ticket[0]['id'])) {
+                                $lastRepliedTime =
+                                    $this->ticketService->time2string($currentDateTime->getTimeStamp() - $this->ticketService->getLastReply($ticket[0]['id'])['createdAt']->getTimeStamp());
+                            } else {
+                                $lastRepliedTime =
+                                    $this->ticketService->time2string($currentDateTime->getTimeStamp() - $ticket[0]['createdAt']->getTimeStamp());
+                            }
+                            $value = $lastRepliedTime;
+                        } else {
+                            $value = '';
+                        }
+                        $sheet->getCell($alphabet . $ticketIndex)->setValue($value);
+                        $columnIndex++;
+                    }
+                }
+
+                $ticketIndex++;
             }
         }
 
         // Increase row cursor after header write
-        $sheet->fromArray($list, null, 'A2', true);
+        //$sheet->fromArray($list, null, 'A2', true);
         $writer = new Xlsx($spreadsheet);
 
         $date = date('d-m-y-' . substr((string)microtime(), 1, 8));
@@ -475,5 +519,20 @@ class Ticket extends Controller
         header('Content-Disposition: attachment; filename="' . urlencode($filename) . '"');
         unlink($filename);
         exit($content);
+    }
+
+    public function numberToAlphabet($number)
+    {
+        $number = intval($number);
+        if ($number <= 0) {
+            return '';
+        }
+        $alphabet = '';
+        while ($number != 0) {
+            $p = ($number - 1) % 26;
+            $number = intval(($number - $p) / 26);
+            $alphabet = chr(65 + $p) . $alphabet;
+        }
+        return $alphabet;
     }
 }

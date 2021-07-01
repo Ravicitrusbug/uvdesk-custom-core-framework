@@ -547,6 +547,7 @@ class TicketService
                 'hasAttachments' => $ticketHasAttachments,
                 'lastReplyTime' => $lastRepliedTime,
                 'status' => $ticketDetails['description'],
+                'company' => $ticketDetails['companyName'],
             ];
 
             if (!empty($ticketDetails['agentId'])) {

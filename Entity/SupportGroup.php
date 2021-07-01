@@ -76,6 +76,17 @@ class SupportGroup
     private $supportTeams;
 
     /**
+     * @var \Doctrine\Common\Collections\Collection
+     * @ORM\ManyToMany(targetEntity="SupportCompany", inversedBy="supportGroups")
+     * @ORM\JoinTable(
+     *      name="uv_support_groups_companies",
+     *      joinColumns={@ORM\JoinColumn(name="supportGroup_id", referencedColumnName="id", onDelete="CASCADE")},
+     *      inverseJoinColumns={@ORM\JoinColumn(name="supportCompany_id", referencedColumnName="id", onDelete="CASCADE")}
+     * )
+     */
+    private $supportCompanies;
+
+    /**
      * Constructor
      */
     public function __construct()
@@ -83,6 +94,7 @@ class SupportGroup
         $this->users = new \Doctrine\Common\Collections\ArrayCollection();
         $this->admins = new \Doctrine\Common\Collections\ArrayCollection();
         $this->supportTeams = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->supportCompanies = new \Doctrine\Common\Collections\ArrayCollection();
     }
 
     /**
@@ -316,6 +328,42 @@ class SupportGroup
     {
         return $this->supportTeams;
     }
+
+
+    /**
+     * Add supportCompany
+     *
+     * @param \Webkul\UVDesk\CoreFrameworkBundle\Entity\supportCompany $supportCompany
+     *
+     * @return SupportGroup
+     */
+    public function addSupportCompany(\Webkul\UVDesk\CoreFrameworkBundle\Entity\supportCompany $supportCompany)
+    {
+        $this->supportCompanies[] = $supportCompany;
+
+        return $this;
+    }
+
+    /**
+     * Remove supportCompany
+     *
+     * @param \Webkul\UVDesk\CoreFrameworkBundle\Entity\supportCompany $supportCompany
+     */
+    public function removeSupportCompany(\Webkul\UVDesk\CoreFrameworkBundle\Entity\SupportCompany $supportCompany)
+    {
+        $this->supportCompanies->removeElement($supportCompany);
+    }
+
+    /**
+     * Get supportCompanies
+     *
+     * @return \Doctrine\Common\Collections\Collection
+     */
+    public function getSupportCompanies()
+    {
+        return $this->supportCompanies;
+    }
+
     /**
      * @ORM\PrePersist
      */
@@ -324,4 +372,3 @@ class SupportGroup
         $this->createdAt = new \DateTime('now');
     }
 }
-

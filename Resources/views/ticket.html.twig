@@ -619,6 +619,23 @@
 						</div>
 					 {% endif %}
 
+                     {# Update Ticket Support Company #}
+					 {% if user_service.isAccessAuthorized('ROLE_AGENT_ASSIGN_TICKET_GROUP') %}
+                        <div class="uv-element-block uv-aside-select">
+                            <label class="uv-aside-select-label">Company</label>
+                            <select id="select-additional-company" class="chosen-select" name="company" data-placeholder="Choose a company...">
+                                    {% for company in supportCompanyCollection %}
+                                    {% set selected = '' %}
+                                    {% if ticket.company %}
+                                        {% if ticket.company.id == company.id %}
+                                            {% set selected = 'selected' %}
+                                        {% endif %}
+                                     {% endif %}
+                                    <option value="{{ company.id }}" {{ selected }}>{{ company.name }}</option>
+                                    {% endfor %}
+                                </select>
+                        </div>
+					 {% endif %}
                 </div>
             </div>
 
@@ -2975,7 +2992,11 @@
 	<script>
         $('#select-additional-organizations').chosen({
             no_results_text: "Oops, nothing found!",
-            width: "95%"
+            width: "100%"
+        });
+        $('#select-additional-company').chosen({
+            no_results_text: "Oops, nothing found!",
+            width: "100%"
         });
 		$('#select-additional-organizations').change(function(){
             app.appView.showLoader();
@@ -3017,6 +3038,21 @@
 				success : function(response) {
                     app.appView.hideLoader();
                     app.appView.renderResponseAlert(response);
+				}
+			});
+		});
+
+        $('#select-additional-company').change(function(){
+            app.appView.showLoader();
+            $.ajax({
+				url : "{{ path('helpdesk_member_update_ticket_company_xhr') }}",
+				type : 'POST',
+				data: { ticketId : {{ ticket.id }}, companyId :  $(this).val() },
+				dataType : 'json',
+				success : function(response) {
+                    app.appView.hideLoader();
+                    app.appView.renderResponseAlert(response);
+                    window.location.reload();
 				}
 			});
 		});

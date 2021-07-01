@@ -82,6 +82,28 @@ helpdesk_member_remove_support_team_xhr:
   controller: Webkul\UVDesk\CoreFrameworkBundle\Controller\TeamXHR::deleteTeamXHR
   defaults: { supportTeamId: 0 }
 
+# Support Company Resources
+helpdesk_member_support_company_collection:
+  path: /companies
+  controller: Webkul\UVDesk\CoreFrameworkBundle\Controller\Company::listCompanies
+
+helpdesk_member_support_company_collection_xhr:
+  path: /companies/xhr
+  controller: Webkul\UVDesk\CoreFrameworkBundle\Controller\CompanyXHR::listCompaniesXHR
+
+helpdesk_member_create_support_company:
+  path: /create/company
+  controller: Webkul\UVDesk\CoreFrameworkBundle\Controller\Company::createCompany
+
+helpdesk_member_update_support_company:
+  path: /company/{supportCompanyId}
+  controller: Webkul\UVDesk\CoreFrameworkBundle\Controller\Company::editCompany
+
+helpdesk_member_remove_support_company_xhr:
+  path: /company/delete/xhr/{supportCompanyId}
+  controller: Webkul\UVDesk\CoreFrameworkBundle\Controller\CompanyXHR::deleteCompanyXHR
+  defaults: { supportCompanyId: 0 }
+
 # Support Privilege Resources
 helpdesk_member_privilege_collection:
   path: /privileges
@@ -243,6 +265,10 @@ helpdesk_member_delete_additional_ticket_organization_xhr:
 helpdesk_member_delete_single_ticket_organization_xhr:
   path: /ticket/delete-single/ticket-organization
   controller: Webkul\UVDesk\CoreFrameworkBundle\Controller\TicketXHR::deleteSingleTicket
+
+helpdesk_member_update_ticket_company_xhr:
+  path: /ticket/company-update
+  controller: Webkul\UVDesk\CoreFrameworkBundle\Controller\TicketXHR::updateTicketCompany
 
 helpdesk_member_export_ticket_organization_xhr:
   path: /ticket/export

@@ -1053,4 +1053,25 @@ class TicketXHR extends Controller
         $response->headers->set('Content-Type', 'application/json');
         return $response;
     }
+
+    public function updateTicketCompany(Request $request)
+    {
+        $companyId = $request->request->get('companyId');
+        $em = $this->getDoctrine()->getManager();
+        $ticketId = $request->request->get('ticketId');
+        $ticket = $em->getRepository('UVDeskCoreFrameworkBundle:Ticket')->find($ticketId);
+        $company = $em->getRepository('UVDeskCoreFrameworkBundle:SupportCompany')->findOneById($companyId);
+
+        if (!empty($companyId)) {
+            $ticket->setCompany($company);
+            $em->persist($ticket);
+            $em->flush();
+            $json['alertClass'] = 'success';
+            $json['alertMessage'] = $this->translator->trans('Success ! Company updated successfully.');
+        }
+
+        $response = new Response(json_encode($json));
+        $response->headers->set('Content-Type', 'application/json');
+        return $response;
+    }
 }
