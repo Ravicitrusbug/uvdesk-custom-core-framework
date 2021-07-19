@@ -622,8 +622,9 @@
                      {# Update Ticket Support Company #}
 					 {% if user_service.isAccessAuthorized('ROLE_AGENT_ASSIGN_TICKET_GROUP') %}
                         <div class="uv-element-block uv-aside-select">
-                            <label class="uv-aside-select-label">Company</label>
-                            <select id="select-additional-company" class="chosen-select" name="company" data-placeholder="Choose a company...">
+                            <label class="uv-aside-select-label">Site</label>
+                            <select id="select-additional-company" class="chosen-select" name="company" data-placeholder="Choose a site...">
+                                    <option value=""></option>
                                     {% for company in supportCompanyCollection %}
                                     {% set selected = '' %}
                                     {% if ticket.company %}
@@ -1346,15 +1347,13 @@
                             <% } else { %>
                                 <li data-action="pin" data-id="0">{{ 'Pin Thread'|trans }}</li>
                             <% } %>
-                            <% if(threadType != 'note') { %>
-                                {% if user_service.isAccessAuthorized('ROLE_AGENT_MANAGE_LOCK_AND_UNLOCK_THREAD') %}
-                                    <% if(isLocked) { %>
-                                        <li data-action="lock" data-id="1">{{ 'Unlock Thread'|trans }}</li>
-                                    <% } else { %>
-                                        <li data-action="lock" data-id="0">{{ 'Lock Thread'|trans }}</li>
-                                    <% } %>
-                                {% endif %}
-                            <% } %>
+                            {% if user_service.isAccessAuthorized('ROLE_AGENT_MANAGE_LOCK_AND_UNLOCK_THREAD') %}
+                                <% if(isLocked) { %>
+                                    <li data-action="lock" data-id="1">{{ 'Unlock Thread'|trans }}</li>
+                                <% } else { %>
+                                    <li data-action="lock" data-id="0">{{ 'Lock Thread'|trans }}</li>
+                                <% } %>
+                            {% endif %}
                             <li style="display: none;" data-action="translate">{{ 'Translate Thread'|trans }}</li>
                         </ul>
                     </div>

@@ -11,8 +11,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class UVDeskService
 {
-	protected $container;
-	protected $requestStack;
+    protected $container;
+    protected $requestStack;
     protected $entityManager;
     private $avoidArray = [
         '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '-', '=', '/', '\\', ':', '{', '}', '[', ']', '<', '>', '.', '?', ';', '"', '\'', ',', '|',
@@ -27,23 +27,23 @@ class UVDeskService
         ' the ', ' a ', ' an ', ' this ', ' that ',
         ' here ', ' there ',
         ' then ', ' when ', ' since ',
-        ' he ', ' him ', ' himself ', ' she ', ' her ', ' herself ', ' i ', ' me ', ' myself ', ' mine ', ' you ', ' your ' ,' yourself ', ' ur ', ' we ', ' ourself ', ' it ', ' its ',
+        ' he ', ' him ', ' himself ', ' she ', ' her ', ' herself ', ' i ', ' me ', ' myself ', ' mine ', ' you ', ' your ', ' yourself ', ' ur ', ' we ', ' ourself ', ' it ', ' its ',
         ' for ', ' from ', ' on ', ' and ', ' in ', ' be ', ' to ', ' or ', ' of ', ' with ',
         ' what ', ' why ', ' where ', ' who ', ' whom ', ' which ',
-        ' a ', ' b ', ' c ', ' d ', ' e ' , ' f ' , ' g ' , ' h ' , ' i ' , ' j ' , ' k ' , ' l ' , ' m ' , ' n ' , ' o ' , ' p ' , ' q ' , ' r ' , ' s ' , ' t ' , ' u ' , ' v ' , ' w ' , ' x ' , ' y ' , ' z ' ,
+        ' a ', ' b ', ' c ', ' d ', ' e ', ' f ', ' g ', ' h ', ' i ', ' j ', ' k ', ' l ', ' m ', ' n ', ' o ', ' p ', ' q ', ' r ', ' s ', ' t ', ' u ', ' v ', ' w ', ' x ', ' y ', ' z ',
         '  ',
     ];
 
-	public function __construct(ContainerInterface $container, RequestStack $requestStack, EntityManagerInterface $entityManager)
-	{
-		$this->container = $container;
-		$this->requestStack = $requestStack;
-		$this->entityManager = $entityManager;
-	}
+    public function __construct(ContainerInterface $container, RequestStack $requestStack, EntityManagerInterface $entityManager)
+    {
+        $this->container = $container;
+        $this->requestStack = $requestStack;
+        $this->entityManager = $entityManager;
+    }
 
-	public function getLocales()
-	{
-		return [
+    public function getLocales()
+    {
+        return [
             'en' => 'English',
             'fr' => 'French',
             'it' => 'Italian',
@@ -54,26 +54,27 @@ class UVDeskService
             'da' => 'Danish'
         ];
     }
-    
+
     public function getTimezones()
     {
         return \DateTimeZone::listIdentifiers();
     }
 
-    public function getPrivileges() {
+    public function getPrivileges()
+    {
         $agentPrivilegeCollection = [];
         // $agentPrivilegeCollection = $this->entityManager->getRepository('UserBundle:AgentPrivilege')->findAll();
 
         return $agentPrivilegeCollection;
     }
 
-	public function getLocaleUrl($locale)
-	{
-		$request = $this->requestStack->getCurrentRequest();
+    public function getLocaleUrl($locale)
+    {
+        $request = $this->requestStack->getCurrentRequest();
 
-		return str_replace('/' . $request->getLocale() . '/', '/' . $locale . '/', $request->getRequestUri());
+        return str_replace('/' . $request->getLocale() . '/', '/' . $locale . '/', $request->getRequestUri());
     }
-    
+
     public function buildPaginationQuery(array $query = [])
     {
         $params = array();
@@ -81,13 +82,13 @@ class UVDeskService
 
         if (isset($query['domain'])) unset($query['domain']);
         if (isset($query['_locale'])) unset($query['_locale']);
-        
+
         foreach ($query as $key => $value) {
             $params[] = !isset($value) ? $key : $key . '/' . str_replace('%2F', '/', rawurlencode($value));
         }
 
         $http_query = implode('/', $params);
-        
+
         if (isset($query['new'])) {
             $http_query = str_replace('new/1', 'new', $http_query);
         } else if (isset($query['unassigned'])) {
@@ -101,36 +102,36 @@ class UVDeskService
         } else if (isset($query['trashed'])) {
             $http_query = str_replace('trashed/1', 'trashed', $http_query);
         }
-        
+
         return $http_query;
     }
 
     public function getEntityManagerResult($entity, $callFunction, $args = false, $extraPrams = false)
     {
-        if($extraPrams)
+        if ($extraPrams)
             return $this->entityManager->getRepository($entity)
-                        ->$callFunction($args, $extraPrams);
+                ->$callFunction($args, $extraPrams);
         else
             return $this->entityManager->getRepository($entity)
-                        ->$callFunction($args);
+                ->$callFunction($args);
     }
 
     public function getValidBroadcastMessage($msg, $format = 'Y-m-d H:i:s')
     {
         $broadcastMessage = !empty($msg) ? json_decode($msg, true) : false;
 
-        if(!empty($broadcastMessage) && isset($broadcastMessage['isActive']) && $broadcastMessage['isActive']) {
+        if (!empty($broadcastMessage) && isset($broadcastMessage['isActive']) && $broadcastMessage['isActive']) {
             $timezone = new \DateTimeZone('Asia/Kolkata');
             $nowTimestamp = date('U');
-            if(array_key_exists('from', $broadcastMessage) && ($fromDateTime = \DateTime::createFromFormat($format, $broadcastMessage['from'], $timezone))) {
+            if (array_key_exists('from', $broadcastMessage) && ($fromDateTime = \DateTime::createFromFormat($format, $broadcastMessage['from'], $timezone))) {
                 $fromTimeStamp = $fromDateTime->format('U');
-                if($nowTimestamp < $fromTimeStamp) {
+                if ($nowTimestamp < $fromTimeStamp) {
                     return false;
                 }
             }
-            if(array_key_exists('to', $broadcastMessage) && ($toDateTime = \DateTime::createFromFormat($format, $broadcastMessage['to'], $timezone))) {
+            if (array_key_exists('to', $broadcastMessage) && ($toDateTime = \DateTime::createFromFormat($format, $broadcastMessage['to'], $timezone))) {
                 $toTimeStamp = $toDateTime->format('U');;
-                if($nowTimestamp > $toTimeStamp) {
+                if ($nowTimestamp > $toTimeStamp) {
                     return false;
                 }
             }
@@ -143,29 +144,30 @@ class UVDeskService
     }
 
     public function getConfigParameter($param)
-	{
-		if($param && $this->container->hasParameter($param)) {
-			return $this->container->getParameter($param);
-		} else {
-			return false;
-		}
+    {
+        if ($param && $this->container->hasParameter($param)) {
+            return $this->container->getParameter($param);
+        } else {
+            return false;
+        }
     }
-    
-    public function isDarkSkin($brandColor) {
+
+    public function isDarkSkin($brandColor)
+    {
         $brandColor = str_replace('#', '', $brandColor);
-        if(strlen($brandColor) == 3)
+        if (strlen($brandColor) == 3)
             $brandColor .= $brandColor;
 
         $chars = str_split($brandColor);
 
         $a2fCount = 0;
         foreach ($chars as $key => $char) {
-            if(in_array($key, [0, 2, 4]) && in_array(strtoupper($char), ['A', 'B', 'C', 'D', 'E', 'F'])) {
+            if (in_array($key, [0, 2, 4]) && in_array(strtoupper($char), ['A', 'B', 'C', 'D', 'E', 'F'])) {
                 $a2fCount++;
             }
         }
 
-        if($a2fCount >= 2)
+        if ($a2fCount >= 2)
             return true;
         else
             return false;
@@ -216,6 +218,7 @@ class UVDeskService
                 'ROLE_AGENT_MANAGE_TAG' => $translator->trans('Can manage tags'),
                 'ROLE_AGENT_MANAGE_KNOWLEDGEBASE' => $translator->trans('Can manage knowledgebase'),
                 'ROLE_AGENT_MANAGE_GROUP_SAVED_REPLY' => $translator->trans("Can manage Group's Saved Reply"),
+                'ROLE_AGENT_MANAGE_EDIT_ARTICLE' => $translator->trans("Can edit article"),
             ]
         ];
     }
@@ -238,7 +241,7 @@ class UVDeskService
     {
         //to remove all tags from text, if any tags are in encoded form
         $newText = preg_replace('/[\s]+/', ' ', str_replace($this->avoidArray, ' ', strtolower(strip_tags(html_entity_decode(strip_tags($text))))));
-        if($lenght)
+        if ($lenght)
             $newText = substr($newText, 0, $lenght);
         return ($returnArray ? explode(' ', $newText) : str_replace(' ', ',', $newText));
     }
@@ -254,7 +257,7 @@ class UVDeskService
     public function getCurrentWebsitePrefixes()
     {
         $filePath = $this->container->get('kernel')->getProjectDir() . '/config/packages/uvdesk.yaml';
-        
+
         // get file content and index
         $file = file($filePath);
         foreach ($file as $index => $content) {
@@ -287,7 +290,7 @@ class UVDeskService
             'member_prefix' => $member_panel_prefix,
             'customer_prefix' => $knowledgebase_prefix,
         ];
-        
+
         // get file content and index
         $file = file($filePath);
         foreach ($file as $index => $content) {
@@ -305,9 +308,9 @@ class UVDeskService
 
         // get old member-prefix
         $oldMemberPrefix = substr($member_panel_text, strpos($member_panel_text, 'uvdesk_site_path.member_prefix') + strlen('uvdesk_site_path.member_prefix: '));
-        $oldMemberPrefix = preg_replace('/([\r\n\t])/','', $oldMemberPrefix);
+        $oldMemberPrefix = preg_replace('/([\r\n\t])/', '', $oldMemberPrefix);
 
-        $updatedPrefixForMember = (null !== $member_panel_line) ? substr($member_panel_text, 0, strpos($member_panel_text, 'uvdesk_site_path.member_prefix') + strlen('uvdesk_site_path.member_prefix: ')) . $website_prefixes['member_prefix'] . PHP_EOL: '';
+        $updatedPrefixForMember = (null !== $member_panel_line) ? substr($member_panel_text, 0, strpos($member_panel_text, 'uvdesk_site_path.member_prefix') + strlen('uvdesk_site_path.member_prefix: ')) . $website_prefixes['member_prefix'] . PHP_EOL : '';
         $updatedPrefixForCustomer = (null !== $customer_panel_line) ? substr($customer_panel_text, 0, strpos($customer_panel_text, 'uvdesk_site_path.knowledgebase_customer_prefix') + strlen('uvdesk_site_path.knowledgebase_customer_prefix: ')) . $website_prefixes['customer_prefix'] . PHP_EOL : '';
 
         $updatedFileContent[$member_panel_line] = $updatedPrefixForMember;
@@ -327,10 +330,10 @@ class UVDeskService
                 list($temp_customer_key, $temp_customer_prefix) = array($key, $value);
             }
         }
-        
+
         $templateFile[$temp_member_key] = $updatedPrefixForMember;
         $templateFile[$temp_customer_key] = $updatedPrefixForCustomer;
-     
+
         file_put_contents($templateFilePath, $templateFile);
 
         $router = $this->container->get('router');

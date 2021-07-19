@@ -51,6 +51,7 @@
                         </div>
                     </div>
                     <!--//Filter By Status-->
+					<a href="#customer-filters" rel="modal:open" type="button" class="uv-btn-action "><span class="uv-icon-add"></span> {{ 'Filters'|trans }}</a>
                 </div>
 				<div class="uv-action-bar-col-rt">
 					<input type="text" class="uv-search-inline uv-vertical-align uv-margin-right-15" placeholder="{{ 'Search'|trans }}">
@@ -71,6 +72,9 @@
                             <th>{{ "Name"|trans }}</th>
                             <th>{{ "Email"|trans }}</th>
                             <th>{{ "Open Tickets"|trans }}</th>
+							<th>{{ 'Company'|trans }}</th>
+							<th>{{ 'Group'|trans }}</th>
+							<th>{{ 'Team'|trans }}</th>
                             <th>{{ "Source"|trans }}</th>
                             <th>{{ "Status"|trans }}</th>
                             <th>{{ "Stared"|trans }}</th>
@@ -84,6 +88,42 @@
             </div>
 		</div>
 	</div>
+
+	<div id="customer-filters" class="modal">
+		<h2>Filter Customer List</h2><br>
+		<div class="uv-element-block uv-aside-select">
+			<label class="uv-aside-select-label">Organization</label>
+			<select id="select-organization" class="chosen-select" name="organization" data-placeholder="Choose a organization...">
+					<option value=""></option>
+					{% for organization in supportTeamCollection %}
+	
+					<option value="{{ organization.id }}">{{ organization.name }}</option>
+					{% endfor %}
+				</select>
+		</div>
+		<div class="uv-element-block uv-aside-select">
+			<label class="uv-aside-select-label">Group</label>
+			<select id="select-group" class="chosen-select" name="group" data-placeholder="Choose a group...">
+					<option value=""></option>
+					{% for group in supportGroupCollection %}
+	
+					<option value="{{ group.id }}">{{ group.name }}</option>
+					{% endfor %}
+				</select>
+		</div>
+		<div class="uv-element-block uv-aside-select">
+			<label class="uv-aside-select-label">Site</label>
+			<select id="select-company" class="chosen-select" name="company" data-placeholder="Choose a site...">
+					<option value=""></option>
+					{% for company in supportCompanyCollection %}
+	
+					<option value="{{ company.id }}">{{ company.name }}</option>
+					{% endfor %}
+				</select>
+		</div>
+		<a type="button" class="uv-btn-action submit-filters">{{ 'Submit'|trans }}</a>
+		<a type="button" class="uv-btn-action reset-filters">{{ 'Rest'|trans }}</a>
+    </div>
 {% endblock %}
 
 {% block footer %}
@@ -136,6 +176,9 @@
         <td data-value="{{ 'Open Tickets'|trans }}">
             <%= count %> {% trans %}Open Tickets{% endtrans %}
         </td>
+		<td data-value="Company"><%= companies %></td>
+		<td data-value="Group"><%= groups %></td>
+		<td data-value="Team"><%= teams %></td>
         <td data-value="{{ 'Source'|trans }}">
             <% if(source == 'website') { %>
 				<span class="uv-channel uv-channel-web"></span>
@@ -198,7 +241,10 @@
 				filterParameters : {
                     "starred" : "",
 					"isEnabled" : "",
-					"search" : ""
+					"search" : "",
+					"group": "",
+					"organization": "",
+					"company":  ""
 				},
 				parseRecords: function (resp, options) {
 					return resp.customers;
@@ -210,6 +256,9 @@
 						reset: true,
 						success: function(model, response) {
 							app.appView.hideLoader();
+							customerCollection.filterParameters.group = '';
+							customerCollection.filterParameters.organization = '';
+							customerCollection.filterParameters.company = '';
 							var customerListView = new CustomerList();
 							app.pager.paginationData = response.pagination_data;
 
@@ -403,6 +452,34 @@
 
 			router = new Router();
 			Backbone.history.start({push_state:true});
+
+			$('.submit-filters').click(function(){
+				app.appView.showLoader();
+				customerCollection.filterParameters.group = $('#select-group').val();
+				customerCollection.filterParameters.organization = $('#select-organization').val()
+				customerCollection.filterParameters.company = $('#select-company').val()
+				customerCollection.syncData();
+				$('.close-modal').trigger('click');
+			})
+
+			$('#select-group').chosen({
+				no_results_text: "Oops, nothing found!",
+				width: "100%"
+			});
+
+			$('#select-organization').chosen({
+				no_results_text: "Oops, nothing found!",
+				width: "100%"
+			});
+
+			$('#select-company').chosen({
+				no_results_text: "Oops, nothing found!",
+				width: "100%"
+			});
+
+			$(".reset-filters").click(function(){
+				window.location.reload();
+			})
 		});
 	</script>
 {% endblock %}

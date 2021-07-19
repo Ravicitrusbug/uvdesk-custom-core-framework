@@ -9,7 +9,7 @@ class Companies implements PanelSidebarItemInterface
 {
     public static function getTitle(): string
     {
-        return "Companies";
+        return "Sites";
     }
 
     public static function getRouteName(): string

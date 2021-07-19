@@ -136,6 +136,48 @@
                 
                 {# Group Tab #}
                 <div class="uv-tab-view" id="groups">
+				
+					<div class="uv-scroll-plank">
+                        <!-- Checkbox Block -->
+                        <div class="uv-element-block">
+                            <label class="uv-field-label">{{ 'Company'|trans }}</label>
+                            <span class="uv-field-info uv-margin-top-5">{{ 'Assigning site(s) to user to view tickets regardless assignment.'|trans }}</span>
+                        </div>
+
+                        <div>
+                            <!--Block-->
+                            <div class="uv-scroll-block" id="beauty-scroll">
+                                {% set companies = user_service.getSupportCompanies() %}
+                                
+                                {% if companies %}
+                                     {% for company in companies %}
+                                        <!-- / -->
+                                        <div class="uv-element-block">
+                                            <label>
+                                                <div class="uv-checkbox">
+                                                     <input name="user_form[companies][]" type="checkbox" value="{{ company.id }}">
+                                                    <span class="uv-checkbox-view"></span>
+                                                </div>
+                                                <span class="uv-checkbox-label">{{ company.name }}</span>
+                                            </label>
+                                        </div>
+                                        <!-- /// -->
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="uv-element-block">
+                                        <a class="uv-error-message" href="{{path('helpdesk_member_support_group_collection')}}" target="_blank">{% trans %}No Site added, Please add Site(s) first !{% endtrans %}</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <!--//Block-->
+
+                        </div>
+                        <div class="uv-element-block">
+                            <a href="#" class="select">{{ 'Select All'|trans }}</a>
+                            <a href="#" class="deselect">{{ 'Remove All'|trans }}</a>
+                        </div>
+                    </div>
+				
                     <div class="uv-scroll-plank">
                         <!-- Checkbox Block -->
                         <div class="uv-element-block">

@@ -25,37 +25,44 @@ class CustomerXHR extends Controller
         $this->translator = $translator;
     }
 
-    public function listCustomersXHR(Request $request) 
+    public function listCustomersXHR(Request $request)
     {
-        if (!$this->userService->isAccessAuthorized('ROLE_AGENT_MANAGE_CUSTOMER')) {          
+        if (!$this->userService->isAccessAuthorized('ROLE_AGENT_MANAGE_CUSTOMER')) {
             return $this->redirect($this->generateUrl('helpdesk_member_dashboard'));
         }
-        
+
+        $group = $request->query->get('group');
+        $organization = $request->query->get('organization');
+        $company = $request->query->get('company');
+        $request->query->remove('company');
+        $request->query->remove('organization');
+        $request->query->remove('group');
+
         $json = array();
-        
-        if($request->isXmlHttpRequest()) {
+
+        if ($request->isXmlHttpRequest()) {
             $repository = $this->getDoctrine()->getRepository('UVDeskCoreFrameworkBundle:User');
-            $json =  $repository->getAllCustomer($request->query, $this->container);
+            $json =  $repository->getAllCustomer($request->query, $this->container, $group, $organization, $company);
         }
         $response = new Response(json_encode($json));
         $response->headers->set('Content-Type', 'application/json');
-        
+
         return $response;
     }
 
-    public function removeCustomerXHR(Request $request) 
+    public function removeCustomerXHR(Request $request)
     {
-        if (!$this->userService->isAccessAuthorized('ROLE_AGENT_MANAGE_CUSTOMER')) {          
+        if (!$this->userService->isAccessAuthorized('ROLE_AGENT_MANAGE_CUSTOMER')) {
             return $this->redirect($this->generateUrl('helpdesk_member_dashboard'));
         }
-        
+
         $json = array();
-        if($request->getMethod() == "DELETE") {
+        if ($request->getMethod() == "DELETE") {
             $em = $this->getDoctrine()->getManager();
             $id = $request->attributes->get('customerId');
             $user = $em->getRepository('UVDeskCoreFrameworkBundle:User')->findOneBy(['id' => $id]);
 
-            if($user) {
+            if ($user) {
 
                 $this->userService->removeCustomer($user);
                 // Trigger customer created event
@@ -77,6 +84,5 @@ class CustomerXHR extends Controller
         $response = new Response(json_encode($json));
         $response->headers->set('Content-Type', 'application/json');
         return $response;
-
     }
 }

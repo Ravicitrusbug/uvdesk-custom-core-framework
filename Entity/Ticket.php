@@ -142,7 +142,7 @@ class Ticket
     /**
      * @var \Webkul\UVDesk\CoreFrameworkBundle\Entity\SupportCompany
      * @ORM\ManyToOne(targetEntity="SupportCompany")
-     * @ORM\JoinColumn(name="company_id", referencedColumnName="id")
+     * @ORM\JoinColumn(name="company_id", referencedColumnName="id", onDelete="SET NULL", nullable=true)
      */
     private $company;
 

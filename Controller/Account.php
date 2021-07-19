@@ -31,15 +31,20 @@ class Account extends AbstractController
     private $uvdeskService;
     private $fileSystem;
 
-    public function __construct(UserService $userService, EventDispatcherInterface $eventDispatcher, TranslatorInterface $translator, UserPasswordEncoderInterface $passwordEncoder, UVDeskService $uvdeskService, FileSystem $fileSystem)
-    {
+    public function __construct(
+        UserService $userService,
+        EventDispatcherInterface $eventDispatcher,
+        TranslatorInterface $translator,
+        UserPasswordEncoderInterface $passwordEncoder,
+        UVDeskService $uvdeskService,
+        FileSystem $fileSystem
+    ) {
         $this->userService = $userService;
         $this->eventDispatcher = $eventDispatcher;
         $this->translator = $translator;
         $this->passwordEncoder = $passwordEncoder;
         $this->uvdeskService = $uvdeskService;
         $this->fileSystem = $fileSystem;
-        
     }
 
     private function encodePassword(User $user, $plainPassword)
@@ -54,13 +59,19 @@ class Account extends AbstractController
 
     public function listAgents(Request $request)
     {
-        if (!$this->userService->isAccessAuthorized('ROLE_AGENT_MANAGE_AGENT')){          
+        if (!$this->userService->isAccessAuthorized('ROLE_AGENT_MANAGE_AGENT')) {
             return $this->redirect($this->generateUrl('helpdesk_member_dashboard'));
         }
+        $entityManager = $this->getDoctrine()->getManager();
+        $userRepository = $entityManager->getRepository('UVDeskCoreFrameworkBundle:User');
 
-        return $this->render('@UVDeskCoreFramework/Agents/listSupportAgents.html.twig');
+        return $this->render('@UVDeskCoreFramework/Agents/listSupportAgents.html.twig', [
+            'supportGroupCollection' => $userRepository->getSupportGroups(),
+            'supportTeamCollection' => $userRepository->getSupportTeams(),
+            'supportCompanyCollection' => $entityManager->getRepository('UVDeskCoreFrameworkBundle:SupportCompany')->findAll(),
+        ]);
     }
-    
+
     public function loadProfile(Request $request)
     {
         // @TODO: Refactor
@@ -76,8 +87,8 @@ class Account extends AbstractController
 
             // Profile upload validation
             $validMimeType = ['image/jpeg', 'image/png', 'image/jpg'];
-            if(isset($dataFiles['profileImage'])){
-                if(!in_array($dataFiles['profileImage']->getMimeType(), $validMimeType)){
+            if (isset($dataFiles['profileImage'])) {
+                if (!in_array($dataFiles['profileImage']->getMimeType(), $validMimeType)) {
                     $this->addFlash('warning', $this->translator->trans('Error ! Profile image is not valid, please upload a valid format'));
                     return $this->redirect($this->generateUrl('helpdesk_member_profile'));
                 }
@@ -88,7 +99,7 @@ class Account extends AbstractController
 
             $errorFlag = 0;
             if ($checkUser) {
-                if($checkUser->getId() != $user->getId())
+                if ($checkUser->getId() != $user->getId())
                     $errorFlag = 1;
             }
 
@@ -98,7 +109,7 @@ class Account extends AbstractController
                 $form = $this->createForm(UserProfile::class, $user);
                 $form->handleRequest($request);
                 $form->submit($data);
-                
+
                 if ($form->isValid()) {
                     if ($data != null) {
                         $submittedPassword = $data['password']['first'];
@@ -107,7 +118,7 @@ class Account extends AbstractController
                         // save previous password if password is blank or null provided
                         $encodedPassword = empty($submittedPassword) ? $password : $encoder->encodePassword($user, $submittedPassword);
 
-                        if (!empty($encodedPassword) ) {
+                        if (!empty($encodedPassword)) {
                             $user->setPassword($encodedPassword);
                         } else {
                             $this->addFlash('warning', $this->translator->trans('Error! Given current password is incorrect.'));
@@ -138,15 +149,15 @@ class Account extends AbstractController
                     $em->flush();
 
                     $roleId = $user->getAgentInstance()->getSupportRole()->getId();
-                    
-                    if(in_array($roleId,  [1,2])) {
+
+                    if (in_array($roleId,  [1, 2])) {
                         // Recaptcha Setting
                         $recaptchaSetting = $em->getRepository('UVDeskCoreFrameworkBundle:Recaptcha')->findOneBy(['id' => 1]);
 
-                        if($recaptchaSetting) {
+                        if ($recaptchaSetting) {
                             $recaptchaSetting->setSiteKey($data['recaptcha_site_key']);
                             $recaptchaSetting->setSecretKey($data['recaptcha_secret_key']);
-                            if(isset($data['recaptcha_status'])) {
+                            if (isset($data['recaptcha_status'])) {
                                 $recaptchaSetting->setIsActive(true);
                             } else {
                                 $recaptchaSetting->setIsActive(false);
@@ -158,7 +169,7 @@ class Account extends AbstractController
                             $recaptchaNew = new Recaptcha;
                             $recaptchaNew->setSiteKey($data['recaptcha_site_key']);
                             $recaptchaNew->setSecretKey($data['recaptcha_secret_key']);
-                            if(isset($data['recaptcha_status'])) {
+                            if (isset($data['recaptcha_status'])) {
                                 $recaptchaNew->setIsActive(true);
                             } else {
                                 $recaptchaNew->setIsActive(false);
@@ -197,7 +208,7 @@ class Account extends AbstractController
             return $this->redirect($this->generateUrl('helpdesk_member_dashboard'));
         }
 
-            // @TODO: Refactor
+        // @TODO: Refactor
         $em = $this->getDoctrine()->getManager();
         $request = $this->container->get('request_stack')->getCurrentRequest();
 
@@ -206,7 +217,8 @@ class Account extends AbstractController
         $instanceRole = $user->getAgentInstance()->getSupportRole()->getCode();
 
         if (empty($user)) {
-            dump('Not found');die;
+            dump('Not found');
+            die;
         }
 
         switch (strtoupper($request->getMethod())) {
@@ -217,8 +229,8 @@ class Account extends AbstractController
 
                 // Agent Profile upload validation
                 $validMimeType = ['image/jpeg', 'image/png', 'image/jpg'];
-                if(isset($dataFiles['profileImage'])){
-                    if(!in_array($dataFiles['profileImage']->getMimeType(), $validMimeType)){
+                if (isset($dataFiles['profileImage'])) {
+                    if (!in_array($dataFiles['profileImage']->getMimeType(), $validMimeType)) {
 
                         $this->addFlash('warning', $this->translator->trans('Error ! Profile image is not valid, please upload a valid format'));
                         $response = $this->render('@UVDeskCoreFramework/Agents/updateSupportAgent.html.twig', [
@@ -229,7 +241,7 @@ class Account extends AbstractController
                         break;
                     }
                 }
-                $checkUser = $em->getRepository('UVDeskCoreFrameworkBundle:User')->findOneBy(array('email'=> $data['email']));
+                $checkUser = $em->getRepository('UVDeskCoreFrameworkBundle:User')->findOneBy(array('email' => $data['email']));
                 $errorFlag = 0;
 
                 if ($checkUser && $checkUser->getId() != $agentId) {
@@ -238,9 +250,10 @@ class Account extends AbstractController
 
                 if (!$errorFlag) {
                     if (
-                        isset($data['password']['first']) && !empty(trim($data['password']['first'])) 
-                        && isset($data['password']['second'])  && !empty(trim($data['password']['second'])) 
-                        && trim($data['password']['first']) == trim($data['password']['second'])) {
+                        isset($data['password']['first']) && !empty(trim($data['password']['first']))
+                        && isset($data['password']['second'])  && !empty(trim($data['password']['second']))
+                        && trim($data['password']['first']) == trim($data['password']['second'])
+                    ) {
                         $encodedPassword = $this->passwordEncoder->encodePassword($user, $data['password']['first']);
                         $user->setPassword($encodedPassword);
                     }
@@ -249,14 +262,15 @@ class Account extends AbstractController
                     $user->setLastName($data['lastName']);
                     $user->setEmail($data['email']);
                     $user->setIsEnabled(isset($data['isActive']));
-                    
+
                     $userInstance = $em->getRepository('UVDeskCoreFrameworkBundle:UserInstance')->findOneBy(['user' => $agentId]);
 
                     $oldSupportTeam = ($supportTeamList = $userInstance->getSupportTeams()) ? $supportTeamList->toArray() : [];
                     $oldSupportGroup  = ($supportGroupList = $userInstance->getSupportGroups()) ? $supportGroupList->toArray() : [];
-                    $oldSupportedPrivilege = ($supportPrivilegeList = $userInstance->getSupportPrivileges())? $supportPrivilegeList->toArray() : [];
+                    $oldSupportCompany  = ($supportCompanyList = $userInstance->getSupportCompanies()) ? $supportCompanyList->toArray() : [];
+                    $oldSupportedPrivilege = ($supportPrivilegeList = $userInstance->getSupportPrivileges()) ? $supportPrivilegeList->toArray() : [];
 
-                    if(isset($data['role'])) {
+                    if (isset($data['role'])) {
                         $role = $em->getRepository('UVDeskCoreFrameworkBundle:SupportRole')->findOneBy(array('code' => $data['role']));
                         $userInstance->setSupportRole($role);
                     }
@@ -277,19 +291,18 @@ class Account extends AbstractController
                     $userInstance->setSignature($data['signature']);
                     $userInstance->setIsActive(true);
 
-                    if(isset($data['userSubGroup'])){
+                    if (isset($data['userSubGroup'])) {
                         foreach ($data['userSubGroup'] as $userSubGroup) {
-                            if($userSubGrp = $this->uvdeskService->getEntityManagerResult(
+                            if ($userSubGrp = $this->uvdeskService->getEntityManagerResult(
                                 'UVDeskCoreFrameworkBundle:SupportTeam',
-                                'findOneBy', [
+                                'findOneBy',
+                                [
                                     'id' => $userSubGroup
                                 ]
-                            )
-                            )
-                                if(!$oldSupportTeam || !in_array($userSubGrp, $oldSupportTeam)){
+                            ))
+                                if (!$oldSupportTeam || !in_array($userSubGrp, $oldSupportTeam)) {
                                     $userInstance->addSupportTeam($userSubGrp);
-
-                                }elseif($oldSupportTeam && ($key = array_search($userSubGrp, $oldSupportTeam)) !== false)
+                                } elseif ($oldSupportTeam && ($key = array_search($userSubGrp, $oldSupportTeam)) !== false)
                                     unset($oldSupportTeam[$key]);
                         }
 
@@ -299,20 +312,19 @@ class Account extends AbstractController
                         }
                     }
 
-                    if(isset($data['groups'])){
+                    if (isset($data['groups'])) {
                         foreach ($data['groups'] as $userGroup) {
-                            if($userGrp = $this->uvdeskService->getEntityManagerResult(
+                            if ($userGrp = $this->uvdeskService->getEntityManagerResult(
                                 'UVDeskCoreFrameworkBundle:SupportGroup',
-                                'findOneBy', [
+                                'findOneBy',
+                                [
                                     'id' => $userGroup
                                 ]
-                            )
-                            )
+                            ))
 
-                                if(!$oldSupportGroup || !in_array($userGrp, $oldSupportGroup)){
+                                if (!$oldSupportGroup || !in_array($userGrp, $oldSupportGroup)) {
                                     $userInstance->addSupportGroup($userGrp);
-
-                                }elseif($oldSupportGroup && ($key = array_search($userGrp, $oldSupportGroup)) !== false)
+                                } elseif ($oldSupportGroup && ($key = array_search($userGrp, $oldSupportGroup)) !== false)
                                     unset($oldSupportGroup[$key]);
                         }
 
@@ -322,19 +334,40 @@ class Account extends AbstractController
                         }
                     }
 
-                    if(isset($data['agentPrivilege'])){
+                    if (isset($data['companies'])) {
+                        foreach ($data['companies'] as $userCompany) {
+                            if ($usercmpny = $this->uvdeskService->getEntityManagerResult(
+                                'UVDeskCoreFrameworkBundle:SupportCompany',
+                                'findOneBy',
+                                [
+                                    'id' => $userCompany
+                                ]
+                            ))
+
+                                if (!$oldSupportCompany || !in_array($usercmpny, $oldSupportCompany)) {
+                                    $userInstance->addSupportCompany($usercmpny);
+                                } elseif ($oldSupportCompany && ($key = array_search($usercmpny, $oldSupportCompany)) !== false)
+                                    unset($oldSupportCompany[$key]);
+                        }
+
+                        foreach ($oldSupportCompany as $removeCompany) {
+                            $userInstance->removeSupportCompany($removeCompany);
+                            $em->persist($userInstance);
+                        }
+                    }
+
+                    if (isset($data['agentPrivilege'])) {
                         foreach ($data['agentPrivilege'] as $supportPrivilege) {
-                            if($supportPlg = $this->uvdeskService->getEntityManagerResult(
+                            if ($supportPlg = $this->uvdeskService->getEntityManagerResult(
                                 'UVDeskCoreFrameworkBundle:SupportPrivilege',
-                                'findOneBy', [
+                                'findOneBy',
+                                [
                                     'id' => $supportPrivilege
                                 ]
-                            )
-                            )
-                                if(!$oldSupportedPrivilege || !in_array($supportPlg, $oldSupportedPrivilege)){
+                            ))
+                                if (!$oldSupportedPrivilege || !in_array($supportPlg, $oldSupportedPrivilege)) {
                                     $userInstance->addSupportPrivilege($supportPlg);
-
-                                }elseif($oldSupportedPrivilege && ($key = array_search($supportPlg, $oldSupportedPrivilege)) !== false)
+                                } elseif ($oldSupportedPrivilege && ($key = array_search($supportPlg, $oldSupportedPrivilege)) !== false)
                                     unset($oldSupportedPrivilege[$key]);
                         }
                         foreach ($oldSupportedPrivilege as $removeGroup) {
@@ -383,7 +416,7 @@ class Account extends AbstractController
     public function createAgent(Request $request)
     {
         // @TODO: Refactor
-        if(!$this->userService->isAccessAuthorized('ROLE_AGENT_MANAGE_AGENT')){          
+        if (!$this->userService->isAccessAuthorized('ROLE_AGENT_MANAGE_AGENT')) {
             return $this->redirect($this->generateUrl('helpdesk_member_dashboard'));
         }
 
@@ -397,8 +430,8 @@ class Account extends AbstractController
 
             // Profile upload validation
             $validMimeType = ['image/jpeg', 'image/png', 'image/jpg'];
-            if(isset($uploadedFiles['profileImage'])){
-                if(!in_array($uploadedFiles['profileImage']->getMimeType(), $validMimeType)){
+            if (isset($uploadedFiles['profileImage'])) {
+                if (!in_array($uploadedFiles['profileImage']->getMimeType(), $validMimeType)) {
                     $this->addFlash('warning', $this->translator->trans('Error ! Profile image is not valid, please upload a valid format'));
                     return $this->redirect($this->generateUrl('helpdesk_member_create_account'));
                 }
@@ -440,6 +473,18 @@ class Account extends AbstractController
                         }
                     }
                     // Map support group
+                    if (!empty($formDetails['companies'])) {
+                        $supportCompanyRepository = $entityManager->getRepository('UVDeskCoreFrameworkBundle:SupportCompany');
+
+                        foreach ($formDetails['companies'] as $supportCompanyId) {
+                            $supportCompany = $supportCompanyRepository->findOneById($supportCompanyId);
+
+                            if (!empty($supportCompany)) {
+                                $userInstance->addSupportCompany($supportCompany);
+                            }
+                        }
+                    }
+
                     if (!empty($formDetails['groups'])) {
                         $supportGroupRepository = $entityManager->getRepository('UVDeskCoreFrameworkBundle:SupportGroup');
 
@@ -455,7 +500,7 @@ class Account extends AbstractController
                     if (!empty($formDetails['agentPrivilege'])) {
                         $supportPrivilegeRepository = $entityManager->getRepository('UVDeskCoreFrameworkBundle:SupportPrivilege');
 
-                        foreach($formDetails['agentPrivilege'] as $supportPrivilegeId) {
+                        foreach ($formDetails['agentPrivilege'] as $supportPrivilegeId) {
                             $supportPrivilege = $supportPrivilegeRepository->findOneById($supportGroupId);
 
                             if (!empty($supportPrivilege)) {

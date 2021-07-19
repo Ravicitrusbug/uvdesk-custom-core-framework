@@ -457,6 +457,7 @@ class TicketService
 
         $supportGroupReference = $this->entityManager->getRepository('UVDeskCoreFrameworkBundle:User')->getUserSupportGroupReferences($activeUser);
         $supportTeamReference  = $this->entityManager->getRepository('UVDeskCoreFrameworkBundle:User')->getUserSupportTeamReferences($activeUser);
+        $supportCompanyReference  = $this->entityManager->getRepository('UVDeskCoreFrameworkBundle:User')->getUserSupportCompanyReferences($activeUser);
 
         // Get base query
         $baseQuery = $ticketRepository->prepareBaseTicketQuery($activeUser, $supportGroupReference, $supportTeamReference, $params);
@@ -575,7 +576,7 @@ class TicketService
             'pagination' => $paginationData,
             'tabs' => $ticketTabs,
             'labels' => [
-                'predefind' => $this->getPredefindLabelDetails($activeUser, $supportGroupReference, $supportTeamReference, $params),
+                'predefind' => $this->getPredefindLabelDetails($activeUser, $supportGroupReference, $supportTeamReference, $params, $supportCompanyReference),
                 'custom' => $this->getCustomLabelDetails($this->container),
             ],
 
@@ -608,7 +609,7 @@ class TicketService
         return $time_str . " " . "ago";
     }
 
-    public function getPredefindLabelDetails(User $currentUser, array $supportGroupIds = [], array $supportTeamIds = [], array $params = [])
+    public function getPredefindLabelDetails(User $currentUser, array $supportGroupIds = [], array $supportTeamIds = [], array $params = [], array $supportCompanyIds = [])
     {
         $data = array();
         $queryBuilder = $this->entityManager->createQueryBuilder();
@@ -625,6 +626,7 @@ class TicketService
         ) {
             $supportGroupIds = implode(',', $supportGroupIds);
             $supportTeamIds = implode(',', $supportTeamIds);
+            $supportCompanyIds =  implode(',', $supportCompanyIds);
 
             if ($userInstance->getTicketAccesslevel() == 4) {
                 $queryBuilder->andwhere('ticket.agent = ' . $currentUser->getId());
@@ -639,10 +641,27 @@ class TicketService
                 $queryBuilder->leftJoin('ticket.supportGroup', 'supportGroup')
                     ->leftJoin('ticket.supportTeam', 'supportTeam')
                     ->andwhere('( ticket.agent = ' . $currentUser->getId() . $query . ')');
+            } elseif ($userInstance->getTicketAccesslevel() == 5) {
+                $query = '';
+                if ($supportCompanyIds) {
+                    $query .= ' OR company.id IN(' . $supportCompanyIds . ') ';
+                }
+                $queryBuilder->leftJoin('ticket.company', 'company')
+                    ->andwhere('( ticket.agent = ' . $currentUser->getId() . $query . ')');
             } elseif ($userInstance->getTicketAccesslevel() == 3) {
                 $query = '';
+
                 if ($supportTeamIds) {
-                    $query .= ' OR supportTeam.id IN(' . $supportTeamIds . ') ';
+                    $filterAdditionalTicket = array();
+                    $result = $ticketRepository->getTicketsByOrganization($supportTeamIds);
+
+                    if (!empty($result)) {
+                        $filterAdditionalTicket = array_column($result, 'id');
+                        // dd($filterAdditionalTicket);
+                        $query .= ' OR supportTeam.id IN(' . $supportTeamIds . ') OR ticket.id IN(' . implode(',', $filterAdditionalTicket) . ')';
+                    } else {
+                        $query .= ' OR supportTeam.id IN(' . $supportTeamIds . ') ';
+                    }
                 }
                 $queryBuilder->leftJoin('ticket.supportGroup', 'supportGroup')
                     ->leftJoin('ticket.supportTeam', 'supportTeam')
@@ -682,7 +701,7 @@ class TicketService
         // for trashed tickets count
         $trashedQb = clone $queryBuilder;
         $trashedQb->where('ticket.isTrashed = 1');
-        if ($currentUser->getRoles()[0] != 'ROLE_SUPER_ADMIN') {
+        if ($currentUser->getRoles()[0] == 'ROLE_AGENT') {
             $trashedQb->andwhere('ticket.agent = ' . $currentUser->getId());
         }
         $data['trashed'] = $trashedQb->getQuery()->getSingleScalarResult();
@@ -1209,6 +1228,7 @@ class TicketService
             ->leftJoin('t.supportLabels', 'sl')
             ->andwhere('sl.user = :userId')
             ->setParameter('userId', $currentUser->getId())
+            ->andwhere('t.isTrashed = 0')
             ->groupBy('sl.id');
 
         $ticketCountResult = $qb->getQuery()->getResult();

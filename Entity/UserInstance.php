@@ -153,6 +153,15 @@ class UserInstance
 
     /**
      * @var \Doctrine\Common\Collections\Collection
+     * @ORM\ManyToMany(targetEntity="SupportCompany", inversedBy="users")
+     * @ORM\JoinTable(name="uv_user_support_companies",
+     *      joinColumns={@ORM\JoinColumn(name="userInstanceId", referencedColumnName="id", onDelete="CASCADE")},
+     *      inverseJoinColumns={@ORM\JoinColumn(name="supportCompanyId", referencedColumnName="id", onDelete="CASCADE")})
+     */
+    private $supportCompanies;
+
+    /**
+     * @var \Doctrine\Common\Collections\Collection
      * @ORM\ManyToMany(targetEntity="SupportTeam", inversedBy="leads")
      * @ORM\JoinTable(name="uv_lead_support_teams",
      *      joinColumns={@ORM\JoinColumn(name="leadUserInstanceId", referencedColumnName="id", onDelete="CASCADE")},
@@ -179,6 +188,7 @@ class UserInstance
         $this->supportPrivileges = new \Doctrine\Common\Collections\ArrayCollection();
         $this->supportTeams = new \Doctrine\Common\Collections\ArrayCollection();
         $this->supportGroups = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->supportCompanies = new \Doctrine\Common\Collections\ArrayCollection();
         $this->leadSupportTeams = new \Doctrine\Common\Collections\ArrayCollection();
         $this->adminSupportGroups = new \Doctrine\Common\Collections\ArrayCollection();
     }
@@ -723,6 +733,40 @@ class UserInstance
     }
 
     /**
+     * Add supportCompany
+     *
+     * @param \Webkul\UVDesk\CoreFrameworkBundle\Entity\SupportCompany $supportCompany
+     *
+     * @return UserInstance
+     */
+    public function addSupportCompany(\Webkul\UVDesk\CoreFrameworkBundle\Entity\SupportCompany $supportCompany)
+    {
+        $this->supportCompanies[] = $supportCompany;
+
+        return $this;
+    }
+
+    /**
+     * Remove supportCompany
+     *
+     * @param \Webkul\UVDesk\CoreFrameworkBundle\Entity\SupportCompany $supportCompany
+     */
+    public function removeSupportCompany(\Webkul\UVDesk\CoreFrameworkBundle\Entity\SupportCompany $supportCompany)
+    {
+        $this->supportCompanies->removeElement($supportCompany);
+    }
+
+    /**
+     * Get supportCompanies
+     *
+     * @return \Doctrine\Common\Collections\Collection
+     */
+    public function getSupportCompanies()
+    {
+        return $this->supportCompanies;
+    }
+
+    /**
      * Add leadSupportTeam
      *
      * @param \Webkul\UVDesk\CoreFrameworkBundle\Entity\SupportTeam $leadSupportTeam
@@ -796,7 +840,7 @@ class UserInstance
      * the first time.
      *
      * @return UserInstance
-    */
+     */
     public function initializeUserTimestamp()
     {
         $this->createdAt = $this->updatedAt = new \DateTime('now');
@@ -810,7 +854,7 @@ class UserInstance
      * Updates the updatedAt field when persisting the UserInstance to database.
      *
      * @return UserInstance
-    */
+     */
     public function updateUserTimestamp()
     {
         $this->updatedAt = new \DateTime('now');
@@ -836,4 +880,3 @@ class UserInstance
         ];
     }
 }
-

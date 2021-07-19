@@ -461,6 +461,19 @@ class UserService
         return array_column($qb->getQuery()->getArrayResult(), 'id');
     }
 
+    public function getUserOrganizationIds($userId)
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $qb->select('supportTeams.id')->from('UVDeskCoreFrameworkBundle:User', 'user')
+            ->leftJoin('user.userInstance', 'userInstance')
+            ->leftJoin('userInstance.supportTeams', 'supportTeams')
+            ->andwhere('user.id = :userId')
+            ->andwhere('supportTeams.isActive = 1')
+            ->setParameter('userId', $userId);
+
+        return array_column($qb->getQuery()->getArrayResult(), 'id');
+    }
+
     public function getUserGroupIds($userId)
     {
         $qb = $this->entityManager->createQueryBuilder();
@@ -825,5 +838,35 @@ class UserService
         }
 
         return $timestamp->format($format);
+    }
+
+    public function getUserCompanyIds($userId)
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $qb->select('supportCompany.id')->from('UVDeskCoreFrameworkBundle:User', 'user')
+            ->leftJoin('user.userInstance', 'userInstance')
+            ->leftJoin('userInstance.supportCompanies', 'supportCompany')
+            ->andwhere('user.id = :userId')
+            ->andwhere('supportCompany.isActive = 1')
+            ->setParameter('userId', $userId);
+
+        return array_column($qb->getQuery()->getArrayResult(), 'id');
+    }
+
+    public function getSupportCompanies(Request $request = null)
+    {
+        static $results;
+        if (null !== $results)
+            return $results;
+        $qb = $this->entityManager->createQueryBuilder();
+        $qb->select('supportCompany.id, supportCompany.name')->from('UVDeskCoreFrameworkBundle:SupportCompany', 'supportCompany')
+            ->andwhere('supportCompany.isActive = 1');
+        if ($request) {
+            $qb->andwhere("supportCompany.name LIKE :companyName");
+            $qb->setParameter('companyName', '%' . urldecode($request->query->get('query')) . '%');
+            $qb->andwhere("supportCompany.id NOT IN (:ids)");
+            $qb->setParameter('ids', explode(',', urldecode($request->query->get('not'))));
+        }
+        return $results = $qb->getQuery()->getArrayResult();
     }
 }

@@ -443,12 +443,12 @@ class Ticket extends Controller
         if (!empty($tickets)) {
             $ticketIndex = 2;
             foreach ($tickets as $ticket) {
+                //dd($ticket[0]['priority']['description']);
                 if (isset($params['columns'])) {
                     $columns = explode(',', $params['columns']);
                     $columnIndex = 1;
                     foreach ($columns as $column) {
                         $alphabet = $this->numberToAlphabet($columnIndex);
-                        //$ticketQueryColumn = $this->getTicketColumnFromSelectedColumn($column);
 
                         if ($column === 'id') {
                             $value = $ticket[0]['id'];
@@ -459,17 +459,30 @@ class Ticket extends Controller
                         } else if ($column === 'group') {
                             $value = $ticket['groupName'];
                         } else if ($column === 'organization') {
-                            $value = $ticket['teamName'];
+                            $additionalOrganizations =  $this->ticketService->getTicketOrganizations($ticket[0]['id']);
+                            if (!empty($additionalOrganizations[0]['name'] != null)) {
+                                if (!empty($ticket['teamName'])) {
+                                    $organizationNames = $ticket['teamName'] . ', ' . implode(' , ', array_column($additionalOrganizations, 'name'));
+                                } else {
+                                    $organizationNames = implode(' , ', array_column($additionalOrganizations, 'name'));
+                                }
+                            } else {
+                                $organizationNames =
+                                    $ticket['teamName'];
+                            }
+                            $value = $organizationNames;
                         } else if ($column === 'type') {
                             $value = $ticket['typeName'];
                         } else if ($column === 'agent') {
                             $value = $ticket['agentName'];
                         } else if ($column === 'status') {
                             $value = $ticket['description'];
-                        } else if ($column === 'company') {
+                        } else if ($column === 'site') {
                             $value = $ticket['companyName'];
                         } else if ($column === 'customer-email') {
                             $value = $ticket['customerEmail'];
+                        } else if ($column === 'priority') {
+                            $value = $ticket[0]['priority']['description'];
                         } else if ($column === 'timestamp') {
                             $website = $entityManager->getRepository('UVDeskCoreFrameworkBundle:Website')->findOneBy(['code' => 'helpdesk']);
                             $timeZone = $website->getTimezone();

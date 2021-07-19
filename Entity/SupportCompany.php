@@ -53,6 +53,13 @@ class SupportCompany
     private $supportGroups;
 
     /**
+     * @var \Doctrine\Common\Collections\Collection
+     * 
+     * @ORM\ManyToMany(targetEntity="UserInstance", mappedBy="supportCompanies")
+     */
+    private $users;
+
+    /**
      * Constructor
      */
     public function __construct()
@@ -207,5 +214,39 @@ class SupportCompany
     public function initializeTimestamp()
     {
         $this->createdAt = new \DateTime('now');
+    }
+
+    /**
+     * Add user
+     *
+     * @param \Webkul\UVDesk\CoreFrameworkBundle\Entity\UserInstance $user
+     *
+     * @return SupportCompany
+     */
+    public function addUser(\Webkul\UVDesk\CoreFrameworkBundle\Entity\UserInstance $user)
+    {
+        $this->users[] = $user;
+
+        return $this;
+    }
+
+    /**
+     * Remove user
+     *
+     * @param \Webkul\UVDesk\CoreFrameworkBundle\Entity\UserInstance $user
+     */
+    public function removeUser(\Webkul\UVDesk\CoreFrameworkBundle\Entity\UserInstance $user)
+    {
+        $this->users->removeElement($user);
+    }
+
+    /**
+     * Get users
+     *
+     * @return \Doctrine\Common\Collections\Collection
+     */
+    public function getUsers()
+    {
+        return $this->users;
     }
 }

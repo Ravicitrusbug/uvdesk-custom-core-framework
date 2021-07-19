@@ -22,6 +22,7 @@ class TicketRepository extends \Doctrine\ORM\EntityRepository
     const TICKET_GLOBAL_ACCESS = 1;
     const TICKET_GROUP_ACCESS = 2;
     const TICKET_TEAM_ACCESS  = 3;
+    const TICKET_COMPANY_ACCESS  = 5;
     const DEFAULT_PAGINATION_LIMIT = 15;
 
     private $container;
@@ -147,7 +148,7 @@ class TicketRepository extends \Doctrine\ORM\EntityRepository
         foreach ($data as $key => $value) {
             if (!in_array($key, $this->safeFields)) {
                 if (isset($data['search']) && $key == 'search') {
-                    $qb->andwhere("t.subject LIKE :subject OR a.email LIKE :agentName OR t.id LIKE :ticketId");
+                    $qb->andwhere("t.subject LIKE :subject OR CONCAT(a.firstName,' ', a.lastName) LIKE :agentName OR t.id LIKE :ticketId");
                     $qb->setParameter('subject', '%' . urldecode($value) . '%');
                     $qb->setParameter('agentName', '%' . urldecode($value) . '%');
                     $qb->setParameter('ticketId', '%' . urldecode($value) . '%');
@@ -221,6 +222,7 @@ class TicketRepository extends \Doctrine\ORM\EntityRepository
         if (!empty($userInstance) && ('ROLE_AGENT' == $userInstance->getSupportRole()->getCode() && $userInstance->getTicketAccesslevel() != self::TICKET_GLOBAL_ACCESS)) {
             $qualifiedGroups = empty($this->params['group']) ? $supportGroupReferences : array_intersect($supportGroupReferences, explode(',', $this->params['group']));
             $qualifiedTeams = empty($this->params['team']) ? $supportTeamReferences : array_intersect($supportTeamReferences, explode(',', $this->params['team']));
+            $qualifiedCompanies  = $this->getEntityManager()->getRepository('UVDeskCoreFrameworkBundle:User')->getUserSupportCompanyReferences($user);
 
             switch ($userInstance->getTicketAccesslevel()) {
                 case self::TICKET_GROUP_ACCESS:
@@ -229,6 +231,12 @@ class TicketRepository extends \Doctrine\ORM\EntityRepository
                         ->setParameter('agentId', $user->getId())
                         ->setParameter('supportGroupIds', $qualifiedGroups)
                         ->setParameter('supportTeamIds', $qualifiedTeams);
+                    break;
+                case self::TICKET_COMPANY_ACCESS:
+                    $qb
+                        ->andWhere("ticket.agent = :agentId OR ticket.company IN(:supportCompanyIds)")
+                        ->setParameter('agentId', $user->getId())
+                        ->setParameter('supportCompanyIds', $qualifiedCompanies);
                     break;
                 case self::TICKET_TEAM_ACCESS:
 
@@ -591,7 +599,7 @@ class TicketRepository extends \Doctrine\ORM\EntityRepository
 
             if ($actAsUser != null) {
                 $userInstance = $actAsUser->getAgentInstance();
-                if (!empty($userInstance) && $field == 'mine') {
+                if (!empty($userInstance) && ('ROLE_AGENT' == $userInstance->getSupportRole()->getCode()) && $field == 'mine') {
                     $fieldValue = $actAsUser->getId();
                 }
             }

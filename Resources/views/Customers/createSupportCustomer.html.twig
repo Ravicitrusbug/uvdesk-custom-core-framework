@@ -110,6 +110,118 @@
 					</div>
                 </div>
 				<!-- //Field -->
+				
+				<div class="uv-scroll-plank">
+                        <!-- Checkbox Block -->
+                        <div class="uv-element-block">
+                            <label class="uv-field-label">{{ 'Company'|trans }}</label>
+                            <span class="uv-field-info uv-margin-top-5">{{ 'Assigning site(s) to user to view tickets regardless assignment.'|trans }}</span>
+                        </div>
+
+                        <div>
+                            <!--Block-->
+                            <div class="uv-scroll-block" id="beauty-scroll">
+                                {% set companies = user_service.getSupportCompanies() %}
+                                
+                                {% if companies %}
+                                     {% for company in companies %}
+                                        <!-- / -->
+                                        <div class="uv-element-block">
+                                            <label>
+                                                <div class="uv-checkbox">
+                                                     <input name="customer_form[companies][]" type="checkbox" value="{{ company.id }}">
+                                                    <span class="uv-checkbox-view"></span>
+                                                </div>
+                                                <span class="uv-checkbox-label">{{ company.name }}</span>
+                                            </label>
+                                        </div>
+                                        <!-- /// -->
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="uv-element-block">
+                                        <a class="uv-error-message" href="{{path('helpdesk_member_support_group_collection')}}" target="_blank">{% trans %}No Site added, Please add Site(s) first !{% endtrans %}</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <!--//Block-->
+
+                        </div>
+                    </div>
+				
+                    <div class="uv-scroll-plank">
+                        <!-- Checkbox Block -->
+                        <div class="uv-element-block">
+                            <label class="uv-field-label">{{ 'Groups'|trans }}</label>
+                            <span class="uv-field-info uv-margin-top-5">{{ 'Assigning group(s) to user to view tickets regardless assignment.'|trans }}</span>
+                        </div>
+
+                        <div>
+                            <!--Block-->
+                            <div class="uv-scroll-block" id="beauty-scroll">
+                                {% set groups = user_service.getSupportGroups() %}
+                                
+                                {% if groups %}
+                                    {% for group in groups %}
+                                        <!-- / -->
+                                        <div class="uv-element-block">
+                                            <label>
+                                                <div class="uv-checkbox">
+                                                     <input name="customer_form[groups][]" type="checkbox" value="{{ group.id }}">
+                                                    <span class="uv-checkbox-view"></span>
+                                                </div>
+                                                <span class="uv-checkbox-label">{{ group.name }}</span>
+                                            </label>
+                                        </div>
+                                        <!-- /// -->
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="uv-element-block">
+                                        <a class="uv-error-message" href="{{path('helpdesk_member_support_group_collection')}}" target="_blank">{% trans %}No Group added, Please add Group(s) first !{% endtrans %}</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <!--//Block-->
+
+                        </div>
+                    </div>
+
+                    {% set userSubGroups = user_service.getUserSubGroupIds(user.id) %}
+                    <div class="uv-scroll-plank">
+                        <!-- Checkbox Block -->
+                        <div class="uv-element-block">
+                            <label class="uv-field-label">{{ 'Teams'|trans }}</label>
+                            <span class="uv-field-info uv-margin-top-5">{{ 'Assigning team(s) to user to view tickets regardless assignment.'|trans }}</span>
+                        </div>
+
+                        <div>
+                            <!--Block-->
+                            <div class="uv-scroll-block" id="beauty-scroll">
+                                {% set teams = user_service.getSupportTeams() %}
+                                {% if teams %}
+                                    {% for team in teams %}
+                                        <!-- / -->
+                                        <div class="uv-element-block">
+                                            <label>
+                                                <div class="uv-checkbox">
+                                                    <input name="customer_form[userSubGroup][]" type="checkbox" value="{{ team.id }}">
+                                                    <span class="uv-checkbox-view"></span>
+                                                </div>
+                                                <span class="uv-checkbox-label">{{ team.name }}</span>
+                                            </label>
+                                        </div>
+                                        <!-- /// -->
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="uv-element-block">
+                                        <a href="{{path('helpdesk_member_support_team_collection')}}" target="_blank">{% trans %}No Team added !{% endtrans %}</a>
+                                    </div>
+                                {% endif %}
+
+                            </div>
+                            <!--//Block-->
+
+                        </div>
+                    </div>
 
 				<!-- CSRF token Field -->
 					{# <input type="hidden" name="customer_form[_token]" value="{{ default_service.generateCsrfToken('customer_form') }}"/> #}

@@ -13,46 +13,62 @@ use Webkul\UVDesk\CoreFrameworkBundle\Services\UserService;
 use Webkul\UVDesk\CoreFrameworkBundle\FileSystem\FileSystem;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Symfony\Component\Translation\TranslatorInterface;
+use Webkul\UVDesk\CoreFrameworkBundle\Services\UVDeskService;
 
 class Customer extends AbstractController
-{   
+{
     private $userService;
     private $eventDispatcher;
     private $translator;
     private $fileSystem;
+    private $uvdeskService;
 
-    public function __construct(UserService $userService, EventDispatcherInterface $eventDispatcher, TranslatorInterface $translator, FileSystem $fileSystem)
-    {
+    public function __construct(
+        UserService $userService,
+        EventDispatcherInterface $eventDispatcher,
+        TranslatorInterface $translator,
+        FileSystem $fileSystem,
+        UVDeskService $uvdeskService
+    ) {
         $this->userService = $userService;
         $this->eventDispatcher = $eventDispatcher;
         $this->translator = $translator;
         $this->fileSystem = $fileSystem;
+        $this->uvdeskService = $uvdeskService;
     }
 
     public function listCustomers(Request $request)
     {
-        if (!$this->userService->isAccessAuthorized('ROLE_AGENT_MANAGE_CUSTOMER')){
+        if (!$this->userService->isAccessAuthorized('ROLE_AGENT_MANAGE_CUSTOMER')) {
             return $this->redirect($this->generateUrl('helpdesk_member_dashboard'));
         }
 
-        return $this->render('@UVDeskCoreFramework/Customers/listSupportCustomers.html.twig');
+        $entityManager = $this->getDoctrine()->getManager();
+        $userRepository = $entityManager->getRepository('UVDeskCoreFrameworkBundle:User');
+
+        return $this->render('@UVDeskCoreFramework/Customers/listSupportCustomers.html.twig', [
+            'supportGroupCollection' => $userRepository->getSupportGroups(),
+            'supportTeamCollection' => $userRepository->getSupportTeams(),
+            'supportCompanyCollection' => $entityManager->getRepository('UVDeskCoreFrameworkBundle:SupportCompany')->findAll(),
+        ]);
     }
 
     public function createCustomer(Request $request)
     {
-        if (!$this->userService->isAccessAuthorized('ROLE_AGENT_MANAGE_CUSTOMER')){
+        if (!$this->userService->isAccessAuthorized('ROLE_AGENT_MANAGE_CUSTOMER')) {
             return $this->redirect($this->generateUrl('helpdesk_member_dashboard'));
         }
 
         if ($request->getMethod() == "POST") {
             $entityManager = $this->getDoctrine()->getManager();
             $formDetails = $request->request->get('customer_form');
+            //dd($formDetails);
             $uploadedFiles = $request->files->get('customer_form');
 
             // Profile upload validation
             $validMimeType = ['image/jpeg', 'image/png', 'image/jpg'];
-            if(isset($uploadedFiles['profileImage'])){
-                if(!in_array($uploadedFiles['profileImage']->getMimeType(), $validMimeType)){
+            if (isset($uploadedFiles['profileImage'])) {
+                if (!in_array($uploadedFiles['profileImage']->getMimeType(), $validMimeType)) {
                     $this->addFlash('warning', $this->translator->trans('Error ! Profile image is not valid, please upload a valid format'));
                     return $this->redirect($this->generateUrl('helpdesk_member_create_customer_account'));
                 }
@@ -61,7 +77,7 @@ class Customer extends AbstractController
             $user = $entityManager->getRepository('UVDeskCoreFrameworkBundle:User')->findOneBy(array('email' => $formDetails['email']));
             $customerInstance = !empty($user) ? $user->getCustomerInstance() : null;
 
-            if (empty($customerInstance)){
+            if (empty($customerInstance)) {
                 if (!empty($formDetails)) {
                     $fullname = trim(implode(' ', [$formDetails['firstName'], $formDetails['lastName']]));
                     $supportRole = $entityManager->getRepository('UVDeskCoreFrameworkBundle:SupportRole')->findOneByCode('ROLE_CUSTOMER');
@@ -72,6 +88,48 @@ class Customer extends AbstractController
                         'active' => !empty($formDetails['isActive']) ? true : false,
                         'image' => $uploadedFiles['profileImage'],
                     ]);
+
+                    $cInstance = $user->getCustomerInstance();
+
+                    // Map support team
+                    if (!empty($formDetails['userSubGroup'])) {
+                        $supportTeamRepository = $entityManager->getRepository('UVDeskCoreFrameworkBundle:SupportTeam');
+
+                        foreach ($formDetails['userSubGroup'] as $supportTeamId) {
+                            $supportTeam = $supportTeamRepository->findOneById($supportTeamId);
+
+                            if (!empty($supportTeam)) {
+                                $cInstance->addSupportTeam($supportTeam);
+                            }
+                        }
+                    }
+                    // Map support group
+                    if (!empty($formDetails['companies'])) {
+                        $supportCompanyRepository = $entityManager->getRepository('UVDeskCoreFrameworkBundle:SupportCompany');
+
+                        foreach ($formDetails['companies'] as $supportCompanyId) {
+                            $supportCompany = $supportCompanyRepository->findOneById($supportCompanyId);
+
+                            if (!empty($supportCompany)) {
+                                $cInstance->addSupportCompany($supportCompany);
+                            }
+                        }
+                    }
+
+                    if (!empty($formDetails['groups'])) {
+                        $supportGroupRepository = $entityManager->getRepository('UVDeskCoreFrameworkBundle:SupportGroup');
+
+                        foreach ($formDetails['groups'] as $supportGroupId) {
+                            $supportGroup = $supportGroupRepository->findOneById($supportGroupId);
+
+                            if (!empty($supportGroup)) {
+                                $cInstance->addSupportGroup($supportGroup);
+                            }
+                        }
+                    }
+
+                    $entityManager->persist($cInstance);
+                    $entityManager->flush();
 
                     $this->addFlash('success', $this->translator->trans('Success ! Customer saved successfully.'));
 
@@ -97,34 +155,35 @@ class Customer extends AbstractController
         $em = $this->getDoctrine()->getManager();
         $repository = $em->getRepository('UVDeskCoreFrameworkBundle:User');
 
-        if($userId = $request->attributes->get('customerId')) {
+        if ($userId = $request->attributes->get('customerId')) {
             $user = $repository->findOneBy(['id' =>  $userId]);
-            if(!$user)
+            if (!$user)
                 $this->noResultFound();
         }
         if ($request->getMethod() == "POST") {
+
             $contentFile = $request->files->get('customer_form');
 
             // Customer Profile upload validation
             $validMimeType = ['image/jpeg', 'image/png', 'image/jpg'];
-            if(isset($contentFile['profileImage'])){
-                if(!in_array($contentFile['profileImage']->getMimeType(), $validMimeType)){
+            if (isset($contentFile['profileImage'])) {
+                if (!in_array($contentFile['profileImage']->getMimeType(), $validMimeType)) {
                     $this->addFlash('warning', $this->translator->trans('Error ! Profile image is not valid, please upload a valid format'));
-                    return $this->render('@UVDeskCoreFramework/Customers/updateSupportCustomer.html.twig', ['user' => $user,'errors' => json_encode([])]);
+                    return $this->render('@UVDeskCoreFramework/Customers/updateSupportCustomer.html.twig', ['user' => $user, 'errors' => json_encode([])]);
                 }
             }
-            if($userId) {
+            if ($userId) {
                 $data = $request->request->all();
                 $data = $data['customer_form'];
                 $checkUser = $em->getRepository('UVDeskCoreFrameworkBundle:User')->findOneBy(array('email' => $data['email']));
                 $errorFlag = 0;
 
-                if($checkUser) {
-                    if($checkUser->getId() != $userId)
+                if ($checkUser) {
+                    if ($checkUser->getId() != $userId)
                         $errorFlag = 1;
                 }
 
-                if(!$errorFlag && 'hello@uvdesk.com' !== $user->getEmail()) {
+                if (!$errorFlag && 'hello@uvdesk.com' !== $user->getEmail()) {
                     $password = $user->getPassword();
                     $email = $user->getEmail();
                     $user->setFirstName($data['firstName']);
@@ -135,17 +194,86 @@ class Customer extends AbstractController
 
                     // User Instance
                     $userInstance = $em->getRepository('UVDeskCoreFrameworkBundle:UserInstance')->findOneBy(array('user' => $user->getId()));
+                    $oldSupportTeam = ($supportTeamList = $userInstance->getSupportTeams()) ? $supportTeamList->toArray() : [];
+                    $oldSupportGroup  = ($supportGroupList = $userInstance->getSupportGroups()) ? $supportGroupList->toArray() : [];
+                    $oldSupportCompany  = ($supportCompanyList = $userInstance->getSupportCompanies()) ? $supportCompanyList->toArray() : [];
+
+                    if (isset($data['userSubGroup'])) {
+                        foreach ($data['userSubGroup'] as $userSubGroup) {
+                            if ($userSubGrp = $this->uvdeskService->getEntityManagerResult(
+                                'UVDeskCoreFrameworkBundle:SupportTeam',
+                                'findOneBy',
+                                [
+                                    'id' => $userSubGroup
+                                ]
+                            ))
+                                if (!$oldSupportTeam || !in_array($userSubGrp, $oldSupportTeam)) {
+                                    $userInstance->addSupportTeam($userSubGrp);
+                                } elseif ($oldSupportTeam && ($key = array_search($userSubGrp, $oldSupportTeam)) !== false)
+                                    unset($oldSupportTeam[$key]);
+                        }
+
+                        foreach ($oldSupportTeam as $removeteam) {
+                            $userInstance->removeSupportTeam($removeteam);
+                            $em->persist($userInstance);
+                        }
+                    }
+
+                    if (isset($data['groups'])) {
+                        foreach ($data['groups'] as $userGroup) {
+                            if ($userGrp = $this->uvdeskService->getEntityManagerResult(
+                                'UVDeskCoreFrameworkBundle:SupportGroup',
+                                'findOneBy',
+                                [
+                                    'id' => $userGroup
+                                ]
+                            ))
+
+                                if (!$oldSupportGroup || !in_array($userGrp, $oldSupportGroup)) {
+                                    $userInstance->addSupportGroup($userGrp);
+                                } elseif ($oldSupportGroup && ($key = array_search($userGrp, $oldSupportGroup)) !== false)
+                                    unset($oldSupportGroup[$key]);
+                        }
+
+                        foreach ($oldSupportGroup as $removeGroup) {
+                            $userInstance->removeSupportGroup($removeGroup);
+                            $em->persist($userInstance);
+                        }
+                    }
+
+                    if (isset($data['companies'])) {
+                        foreach ($data['companies'] as $userCompany) {
+                            if ($usercmpny = $this->uvdeskService->getEntityManagerResult(
+                                'UVDeskCoreFrameworkBundle:SupportCompany',
+                                'findOneBy',
+                                [
+                                    'id' => $userCompany
+                                ]
+                            ))
+
+                                if (!$oldSupportCompany || !in_array($usercmpny, $oldSupportCompany)) {
+                                    $userInstance->addSupportCompany($usercmpny);
+                                } elseif ($oldSupportCompany && ($key = array_search($usercmpny, $oldSupportCompany)) !== false)
+                                    unset($oldSupportCompany[$key]);
+                        }
+
+                        foreach ($oldSupportCompany as $removeCompany) {
+                            $userInstance->removeSupportCompany($removeCompany);
+                            $em->persist($userInstance);
+                        }
+                    }
+
                     $userInstance->setUser($user);
                     // $userInstance->setIsActive(isset($data['isActive']) ? 1 : 0);
                     $userInstance->setIsVerified(0);
-                    if(isset($data['source']))
+                    if (isset($data['source']))
                         $userInstance->setSource($data['source']);
                     else
                         $userInstance->setSource('website');
-                    if(isset($data['contactNumber'])) {
+                    if (isset($data['contactNumber'])) {
                         $userInstance->setContactNumber($data['contactNumber']);
                     }
-                    if(isset($contentFile['profileImage'])){
+                    if (isset($contentFile['profileImage'])) {
                         $assetDetails = $this->fileSystem->getUploadManager()->uploadFile($contentFile['profileImage'], 'profile');
                         $userInstance->setProfileImagePath($assetDetails['path']);
                     }
@@ -170,7 +298,7 @@ class Customer extends AbstractController
                     $this->addFlash('warning', $this->translator->trans('Error ! User with same email is already exist.'));
                 }
             }
-        } elseif($request->getMethod() == "PUT") {
+        } elseif ($request->getMethod() == "PUT") {
             $content = json_decode($request->getContent(), true);
             $userId  = $content['id'];
             $user = $repository->findOneBy(['id' =>  $userId]);
@@ -182,7 +310,7 @@ class Customer extends AbstractController
             $errorFlag = 0;
 
             if ($checkUser) {
-                if($checkUser->getId() != $userId)
+                if ($checkUser->getId() != $userId)
                     $errorFlag = 1;
             }
 
@@ -196,7 +324,7 @@ class Customer extends AbstractController
 
                 //user Instance
                 $userInstance = $em->getRepository('UVDeskCoreFrameworkBundle:UserInstance')->findOneBy(array('user' => $user->getId()));
-                if(isset($content['contactNumber'])){
+                if (isset($content['contactNumber'])) {
                     $userInstance->setContactNumber($content['contactNumber']);
                 }
                 $em->persist($userInstance);
@@ -235,19 +363,20 @@ class Customer extends AbstractController
         $json = array();
         $em = $this->getDoctrine()->getManager();
         $data = json_decode($request->getContent(), true);
-        $id = $request->attributes->get('id') ? : $data['id'];
+        $id = $request->attributes->get('id') ?: $data['id'];
         $user = $em->getRepository('UVDeskCoreFrameworkBundle:User')->findOneBy(['id' => $id]);
-        if(!$user)  {
+        if (!$user) {
             $json['error'] = 'resource not found';
             return new JsonResponse($json, Response::HTTP_NOT_FOUND);
         }
-        $userInstance = $em->getRepository('UVDeskCoreFrameworkBundle:UserInstance')->findOneBy(array(
+        $userInstance = $em->getRepository('UVDeskCoreFrameworkBundle:UserInstance')->findOneBy(
+            array(
                 'user' => $id,
                 'supportRole' => 4
             )
         );
 
-        if($userInstance->getIsStarred()) {
+        if ($userInstance->getIsStarred()) {
             $userInstance->setIsStarred(0);
             $em->persist($userInstance);
             $em->flush();

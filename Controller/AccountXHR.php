@@ -32,10 +32,17 @@ class AccountXHR extends Controller
         if (!$this->userService->isAccessAuthorized('ROLE_AGENT_MANAGE_AGENT')) {
             return $this->redirect($this->generateUrl('helpdesk_member_dashboard'));
         }
+        $group = $request->query->get('group');
+        $organization = $request->query->get('organization');
+        $company = $request->query->get('company');
+        $request->query->remove('company');
+        $request->query->remove('organization');
+        $request->query->remove('group');
 
+        $request->query->get('company');
         if (true === $request->isXmlHttpRequest()) {
             $userRepository = $this->getDoctrine()->getRepository('UVDeskCoreFrameworkBundle:User');
-            $agentCollection = $userRepository->getAllAgents($request->query, $this->container);
+            $agentCollection = $userRepository->getAllAgents($request->query, $this->container, $group, $organization, $company);
             return new Response(json_encode($agentCollection), 200, ['Content-Type' => 'application/json']);
         }
         return new Response(json_encode([]), 404);
@@ -43,7 +50,7 @@ class AccountXHR extends Controller
 
     public function deleteAgent(Request $request)
     {
-        if($request->getMethod() == "DELETE") {
+        if ($request->getMethod() == "DELETE") {
             $em = $this->getDoctrine()->getManager();
             $id = $request->query->get('id');
             /*
@@ -58,7 +65,7 @@ class AccountXHR extends Controller
                 ->getOneOrNullResult();
 
             if ($user) {
-                if($user->getAgentInstance()->getSupportRole() != "ROLE_SUPER_ADMIN") {
+                if ($user->getAgentInstance()->getSupportRole() != "ROLE_SUPER_ADMIN") {
                     $this->userService->removeAgent($user);
 
                     // Trigger agent delete event
@@ -92,7 +99,7 @@ class AccountXHR extends Controller
         $user = $this->userService->getCurrentUser();
         $userData = $user->getAgentInstance();
 
-        if($request->getMethod() == 'POST') {
+        if ($request->getMethod() == 'POST') {
             $content = $request->request->all();
             $filter = new SavedFilters();
             $filter->setName($content['name']);
@@ -101,7 +108,7 @@ class AccountXHR extends Controller
             $em->persist($filter);
             $em->flush();
 
-            if(isset($content['is_default'])) {
+            if (isset($content['is_default'])) {
                 $userData->setDefaultFiltering($filter->getId());
                 $em->persist($userData);
                 $em->flush();
@@ -110,25 +117,25 @@ class AccountXHR extends Controller
             $json['filter'] = ['id' => $filter->getId(), 'name' => $filter->getName(), 'route' => $filter->getRoute(), 'is_default' => isset($content['is_default'])];
             $json['alertClass'] = 'success';
             $json['alertMessage'] = $this->translator->trans('Success ! Filter has been saved successfully.');
-        } elseif($request->getMethod() == 'PUT' || $request->getMethod() == 'PATCH') {
+        } elseif ($request->getMethod() == 'PUT' || $request->getMethod() == 'PATCH') {
             $content = $request->request->all();
             $filter = $em->getRepository('UVDeskCoreFrameworkBundle:SavedFilters')->find($content['id']);
             $filter->setName($content['name']);
             $filter->setRoute($content['route']);
             $em->flush();
 
-            if(isset($content['is_default']))
+            if (isset($content['is_default']))
                 $userData->setDefaultFiltering($filter->getId());
-            elseif($filter->getId() == $userData->getDefaultFiltering())
+            elseif ($filter->getId() == $userData->getDefaultFiltering())
                 $userData->setDefaultFiltering(0);
 
             $em->persist($userData);
             $em->flush();
 
-            $json['filter'] = ['id' => $filter->getId(), 'name' => $filter->getName(), 'route' => $filter->getRoute(), 'is_default' => isset($content['is_default']) ? 1 : 0 ];
+            $json['filter'] = ['id' => $filter->getId(), 'name' => $filter->getName(), 'route' => $filter->getRoute(), 'is_default' => isset($content['is_default']) ? 1 : 0];
             $json['alertClass'] = 'success';
             $json['alertMessage'] = $this->translator->trans('Success ! Filter has been updated successfully.');
-        } elseif($request->getMethod() == 'DELETE') {
+        } elseif ($request->getMethod() == 'DELETE') {
 
             $id = $request->attributes->get('filterId');
             $filter = $em->getRepository('UVDeskCoreFrameworkBundle:SavedFilters')->find($id);
